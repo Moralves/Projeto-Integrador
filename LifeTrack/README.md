@@ -1,94 +1,98 @@
-# React and Spring Boot Workspace
+# LifeTrack | React (Vite) + Spring Boot
 
-This project is a full-stack application built with React for the frontend and Spring Boot for the backend. Below are the instructions for setting up and running both parts of the application.
+LifeTrack é um workspace full-stack que combina um frontend em React (com Vite) e um backend em Spring Boot. Use este guia para preparar o ambiente, executar os serviços e manter o fluxo de desenvolvimento organizado.
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
-react-springboot-workspace
-├── frontend          # React application
-│   ├── package.json  # npm configuration for frontend
-│   ├── public
-│   │   └── index.html # Main HTML file for React
-│   ├── src
-│   │   ├── index.js   # Entry point for React application
-│   │   ├── App.js     # Main App component
-│   │   ├── components  # React components
-│   │   │   └── ExampleComponent.js
-│   │   ├── api        # API calls to backend
-│   │   │   └── api.js
-│   │   └── styles     # CSS styles
-│   │       └── app.css
-│   └── README.md      # Documentation for frontend
-├── backend           # Spring Boot application
-│   ├── pom.xml       # Maven configuration for backend
-│   └── src
-│       ├── main
-│       │   ├── java
-│       │   │   └── com
-│       │   │       └── example
-│       │   │           └── app
-│       │   │               ├── Application.java
-│       │   │               ├── controller
-│       │   │               │   └── ExampleController.java
-│       │   │               ├── service
-│       │   │               │   └── ExampleService.java
-│       │   │               └── model
-│       │   │                   └── ExampleModel.java
-│       │   └── resources
-│       │       └── application.properties
-│       └── test
-│           └── java
-│               └── com
-│                   └── example
-│                       └── app
-│                           └── ApplicationTests.java
-├── .gitignore        # Git ignore file
-└── README.md         # Overall project documentation
+LifeTrack
+├── frontend/                   # Aplicação React + Vite
+│   ├── package.json            # Scripts npm e dependências
+│   ├── vite.config.js
+│   ├── public/
+│   │   └── vite.svg
+│   └── src/
+│       ├── main.jsx            # Ponto de entrada React
+│       ├── App.jsx             # Componente raiz
+│       ├── App.css | index.css # Estilos globais
+│       └── assets/
+├── backend/                    # Aplicação Spring Boot
+│   ├── pom.xml                 # Configuração Maven
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/example/app/
+│       │   │   ├── Application.java
+│       │   │   ├── controller/ExampleController.java
+│       │   │   ├── service/ExampleService.java
+│       │   │   └── model/ExampleModel.java
+│       │   └── resources/application.properties
+│       └── test/java/com/example/app/ApplicationTests.java
+└── README.md
 ```
 
-## Frontend Setup
+## Pré-requisitos
 
-1. Navigate to the `frontend` directory:
+- Node.js 18+ e npm (testado com Vite 7)
+- Java 17+ (LTS) e Maven 3.9+
+- IDE/Editor com suporte a React e Java (VS Code + IntelliJ/Eclipse recomendado)
+
+## Configurando o Frontend (React + Vite)
+
+1. Instale dependências:
    ```
    cd frontend
-   ```
-
-2. Install dependencies:
-   ```
    npm install
    ```
-
-3. Start the React application:
+2. Ambiente de desenvolvimento com hot reload:
    ```
-   npm start
+   npm run dev
+   ```
+   O Vite expõe a aplicação em `http://localhost:5173` por padrão.
+3. Build de produção:
+   ```
+   npm run build
+   ```
+4. Preview do build:
+   ```
+   npm run preview
+   ```
+5. Lint opcional (ESLint):
+   ```
+   npm run lint
    ```
 
-The application will be running on `http://localhost:3000`.
+## Configurando o Backend (Spring Boot)
 
-## Backend Setup
-
-1. Navigate to the `backend` directory:
+1. Instale dependências e gere o artefato:
    ```
    cd backend
-   ```
-
-2. Build the Spring Boot application:
-   ```
    mvn clean install
    ```
-
-3. Run the Spring Boot application:
+2. Execute a API:
    ```
    mvn spring-boot:run
    ```
+   O serviço inicia em `http://localhost:8080`.
 
-The backend will be running on `http://localhost:8080`.
+## Integração Frontend ↔ Backend
 
-## API Endpoints
+- Exponha endpoints REST no backend (`backend/src/main/java/com/example/app/controller/ExampleController.java`).
+- Consuma-os no frontend criando clientes HTTP (por exemplo, `fetch` ou `axios`) na pasta `frontend/src/`.
+- Durante o desenvolvimento, mantenha ambos os servidores rodando simultaneamente (Vite e Spring Boot).
 
-The backend exposes various API endpoints that can be consumed by the frontend. Please refer to the `ExampleController.java` for the available endpoints and their usage.
+## Fluxo de Desenvolvimento Recomendado
 
-## Conclusion
+1. `npm run dev` para trabalhar a UI em tempo real.
+2. `mvn spring-boot:run` para validar APIs.
+3. Ajuste as dependências via `package.json` (frontend) ou `pom.xml` (backend).
+4. Garanta que builds (`npm run build` e `mvn clean install`) passem antes de publicar.
 
-This workspace provides a complete setup for a React and Spring Boot application. Follow the instructions above to get both the frontend and backend running. Happy coding!
+## Endpoints e Contratos
+
+- Consulte `ExampleController.java` para ver os endpoints padrão.
+- Documente novos endpoints diretamente no controller ou em arquivos de especificação (Swagger/OpenAPI) para manter o contrato atualizado.
+
+## Próximos Passos
+
+- Personalize o README do frontend (`frontend/README.md`) se precisar detalhar fluxos específicos da UI.
+- Adicione instruções de deploy (Docker, cloud, etc.) conforme o projeto evoluir.
