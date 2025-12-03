@@ -10,6 +10,7 @@ com\example\app\model\ExampleModel.class
 com\vitalistech\sosrota\dominio\modelo\RuaConexao.class
 com\vitalistech\sosrota\web\controlador\UsuarioControlador.class
 com\vitalistech\sosrota\web\controlador\AmbulanciaControlador.class
+com\vitalistech\sosrota\web\controlador\RelatorioControlador.class
 com\vitalistech\sosrota\dominio\modelo\EquipeProfissional.class
 com\vitalistech\sosrota\util\AlgoritmoDijkstra.class
 com\example\app\Application.class
@@ -24,6 +25,7 @@ com\vitalistech\sosrota\web\dto\CriarUsuarioDTO.class
 com\vitalistech\sosrota\dominio\modelo\Gravidade.class
 com\vitalistech\sosrota\web\dto\LoginResponseDTO.class
 com\vitalistech\sosrota\dominio\modelo\Equipe.class
+com\vitalistech\sosrota\web\controlador\BairroControlador.class
 com\vitalistech\sosrota\dominio\modelo\Bairro.class
 com\example\app\controller\ExampleController.class
 com\vitalistech\sosrota\web\dto\RegistrarOcorrenciaDTO.class
@@ -31,6 +33,7 @@ com\vitalistech\sosrota\dominio\modelo\TipoAmbulancia.class
 com\vitalistech\sosrota\dominio\servico\EquipeServico.class
 com\vitalistech\sosrota\config\ConfiguracaoSeguranca.class
 com\vitalistech\sosrota\dominio\modelo\Usuario.class
+com\vitalistech\sosrota\web\dto\RelatorioOcorrenciaDTO.class
 com\vitalistech\sosrota\dominio\repositorio\ProfissionalRepositorio.class
 com\vitalistech\sosrota\dominio\repositorio\RuaConexaoRepositorio.class
 com\vitalistech\sosrota\dominio\modelo\FuncaoProfissional.class

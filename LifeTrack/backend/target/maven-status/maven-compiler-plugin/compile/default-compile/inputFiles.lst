@@ -35,9 +35,11 @@ B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\util\Algoritm
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\util\ResultadoRota.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\AmbulanciaControlador.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\AuthControlador.java
+B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\BairroControlador.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\EquipeControlador.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\OcorrenciaControlador.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\ProfissionalControlador.java
+B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\RelatorioControlador.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\UsuarioControlador.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\controlador\UtilControlador.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\CriarEquipeDTO.java
@@ -45,4 +47,5 @@ B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\Criar
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\LoginDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\LoginResponseDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\RegistrarOcorrenciaDTO.java
+B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\RelatorioOcorrenciaDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\UsuarioDTO.java

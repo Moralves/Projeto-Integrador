@@ -21,23 +21,27 @@ public class OcorrenciaServico {
     private final AtendimentoRepositorio atendimentoRepositorio;
     private final RuaConexaoRepositorio ruaConexaoRepositorio;
     private final EquipeRepositorio equipeRepositorio;
+    private final UsuarioRepositorio usuarioRepositorio;
 
     public OcorrenciaServico(OcorrenciaRepositorio ocorrenciaRepositorio,
                              AmbulanciaRepositorio ambulanciaRepositorio,
                              AtendimentoRepositorio atendimentoRepositorio,
                              RuaConexaoRepositorio ruaConexaoRepositorio,
-                             EquipeRepositorio equipeRepositorio) {
+                             EquipeRepositorio equipeRepositorio,
+                             UsuarioRepositorio usuarioRepositorio) {
         this.ocorrenciaRepositorio = ocorrenciaRepositorio;
         this.ambulanciaRepositorio = ambulanciaRepositorio;
         this.atendimentoRepositorio = atendimentoRepositorio;
         this.ruaConexaoRepositorio = ruaConexaoRepositorio;
         this.equipeRepositorio = equipeRepositorio;
+        this.usuarioRepositorio = usuarioRepositorio;
     }
 
     public Ocorrencia registrarOcorrencia(Bairro bairroLocal,
                                           String tipoOcorrencia,
                                           Gravidade gravidade,
-                                          String observacoes) {
+                                          String observacoes,
+                                          Usuario usuarioRegistro) {
 
         Ocorrencia ocorrencia = new Ocorrencia();
         ocorrencia.setBairroLocal(bairroLocal);
@@ -46,6 +50,7 @@ public class OcorrenciaServico {
         ocorrencia.setObservacoes(observacoes);
         ocorrencia.setDataHoraAbertura(LocalDateTime.now());
         ocorrencia.setStatusOcorrencia(StatusOcorrencia.ABERTA);
+        ocorrencia.setUsuarioRegistro(usuarioRegistro);
 
         return ocorrenciaRepositorio.save(ocorrencia);
     }
@@ -54,7 +59,7 @@ public class OcorrenciaServico {
      * Despacha uma ambulância para a ocorrência considerando regras de SLA e equipe.
      */
     @Transactional
-    public Atendimento despacharOcorrencia(Long idOcorrencia) {
+    public Atendimento despacharOcorrencia(Long idOcorrencia, Usuario usuarioDespacho) {
 
         Ocorrencia ocorrencia = ocorrenciaRepositorio.findById(idOcorrencia)
                 .orElseThrow(() -> new IllegalArgumentException("Ocorrência não encontrada"));
@@ -125,6 +130,7 @@ public class OcorrenciaServico {
         atendimento.setAmbulancia(melhorAmbulancia);
         atendimento.setDataHoraDespacho(LocalDateTime.now());
         atendimento.setDistanciaKm(menorDistancia);
+        atendimento.setUsuarioDespacho(usuarioDespacho);
 
         return atendimentoRepositorio.save(atendimento);
     }

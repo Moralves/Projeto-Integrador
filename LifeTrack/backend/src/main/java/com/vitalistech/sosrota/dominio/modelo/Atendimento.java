@@ -29,6 +29,10 @@ public class Atendimento {
 
     private Double distanciaKm;
 
+    @ManyToOne
+    @JoinColumn(name = "id_usuario_despacho")
+    private Usuario usuarioDespacho;
+
     public Long getId() {
         return id;
     }
@@ -75,5 +79,13 @@ public class Atendimento {
 
     public void setDistanciaKm(Double distanciaKm) {
         this.distanciaKm = distanciaKm;
+    }
+
+    public Usuario getUsuarioDespacho() {
+        return usuarioDespacho;
+    }
+
+    public void setUsuarioDespacho(Usuario usuarioDespacho) {
+        this.usuarioDespacho = usuarioDespacho;
     }
 }

@@ -36,6 +36,10 @@ public class Ocorrencia {
     @Column(length = 1000)
     private String observacoes;
 
+    @ManyToOne
+    @JoinColumn(name = "id_usuario_registro")
+    private Usuario usuarioRegistro;
+
     public Long getId() {
         return id;
     }
@@ -90,5 +94,13 @@ public class Ocorrencia {
 
     public void setObservacoes(String observacoes) {
         this.observacoes = observacoes;
+    }
+
+    public Usuario getUsuarioRegistro() {
+        return usuarioRegistro;
+    }
+
+    public void setUsuarioRegistro(Usuario usuarioRegistro) {
+        this.usuarioRegistro = usuarioRegistro;
     }
 }
