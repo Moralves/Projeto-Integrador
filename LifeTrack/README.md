@@ -7,6 +7,7 @@ Sistema full-stack para gestão e despacho de atendimentos de emergência, desen
 ## 📑 Índice
 
 - [Início Rápido](#-início-rápido)
+- [Instalação em Novo Computador](#-instalação-em-novo-computador)
 - [Pré-requisitos](#-pré-requisitos)
 - [Configuração](#-configuração)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
@@ -61,6 +62,27 @@ npm run dev
 
 - **Frontend:** http://localhost:5173
 - **Backend API:** http://localhost:8081/api
+
+---
+
+## 💻 Instalação em Novo Computador
+
+**📦 Guia Completo de Instalação**
+
+Se você está configurando o projeto em um computador novo, siga o guia detalhado:
+
+👉 **[INSTALACAO.md](./INSTALACAO.md)** - Guia passo a passo completo
+
+O guia inclui:
+- ✅ Verificação de pré-requisitos
+- ✅ Instalação de dependências (Java, Node.js, PostgreSQL)
+- ✅ Configuração do banco de dados
+- ✅ Compilação e execução do backend
+- ✅ Configuração e execução do frontend
+- ✅ Criação do usuário administrador
+- ✅ Troubleshooting de problemas comuns
+
+**Recomendado para:** Primeira instalação ou setup em máquina nova.
 
 ---
 
