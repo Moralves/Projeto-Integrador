@@ -16,13 +16,15 @@ java -jar target\sos-rota-0.0.1-SNAPSHOT.jar
 ### Se precisar recompilar:
 
 ```powershell
-# Com Maven instalado:
-mvn clean install
+# Usando Maven Wrapper (recomendado - não precisa ter Maven instalado):
+.\mvnw.cmd clean install -DskipTests
 java -jar target\sos-rota-0.0.1-SNAPSHOT.jar
 
-# Ou diretamente:
-mvn spring-boot:run
+# Ou executar diretamente sem gerar JAR:
+.\mvnw.cmd spring-boot:run
 ```
+
+> **Nota:** O projeto usa Maven Wrapper (`mvnw.cmd`), então você **não precisa ter Maven instalado**. Use sempre `.\mvnw.cmd` ao invés de `mvn`.
 
 ## Configuração
 

@@ -1,0 +1,365 @@
+# ============================================
+# Java + Maven (Backend)
+# ============================================
+
+# Maven - Diretório de compilação e artefatos
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Arquivos compilados Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+
+# Arquivos de compilação incremental
+*.iml
+*.ipr
+*.iws
+
+# ============================================
+# Spring Boot
+# ============================================
+
+# Arquivos de configuração locais (podem conter senhas e credenciais)
+application-local.properties
+application-local.yml
+application-local.yaml
+application-*.local.*
+*.local
+
+# Logs do Spring Boot
+spring.log
+*.log
+logs/
+*.log.*
+
+# Arquivos temporários do Spring Boot
+.apt_generated/
+.factorypath
+.buildpath
+
+# Arquivos de teste do Spring Boot
+.springBeans
+
+# ============================================
+# Node.js / Vite / npm (Frontend)
+# ============================================
+
+# Dependências
+node_modules/
+jspm_packages/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json.bak
+
+# Build de produção
+dist/
+dist-ssr/
+build/
+out/
+*.tsbuildinfo
+
+# Cache
+.npm
+.eslintcache
+.stylelintcache
+.parcel-cache
+.cache/
+.rollup.cache/
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ============================================
+# IDEs e Editores
+# ============================================
+
+# Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IntelliJ IDEA / Android Studio
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+atlassian-ide-plugin.xml
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+.loadpath
+.externalToolBuilders/
+.cproject
+.autotools
+.factorypath
+.buildpath
+.target
+.tern-project
+.tern-port
+.metadata
+.recommenders
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+nb-configuration.xml
+
+# VS Code / Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================
+# Sistema Operacional - Windows
+# ============================================
+
+# Arquivos temporários do Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+*.exe
+*.dll
+*.obj
+*.pdb
+
+# Arquivos de sistema Windows
+*.tmp
+*.temp
+*.bak
+*.swp
+*~.nib
+*.orig
+
+# ============================================
+# Sistema Operacional - macOS
+# ============================================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ============================================
+# Sistema Operacional - Linux
+# ============================================
+
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+.dmrc
+.ecryptfs
+.gvfs
+.thumbnails
+
+# ============================================
+# Testes e Cobertura
+# ============================================
+
+# Cobertura de código
+coverage/
+*.lcov
+.nyc_output/
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
+
+# Testes
+test-results/
+test-output/
+*.test.js.snap
+
+# ============================================
+# Banco de Dados
+# ============================================
+
+# Arquivos de dump e backup
+*.sql.bak
+*.dump
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================
+# Arquivos Temporários e Backups
+# ============================================
+
+# Backups
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.swp
+*.swo
+*~
+
+# Arquivos temporários
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+*.pid.lock
+
+# ============================================
+# Arquivos de Documentação Gerados
+# ============================================
+
+# Javadoc
+javadoc/
+
+# Documentação gerada
+docs/_build/
+site/
+
+# ============================================
+# Arquivos de Configuração Sensíveis
+# ============================================
+
+# Credenciais e chaves
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+*.secret
+*.credentials
+
+# Arquivos de configuração com senhas
+config/local.*
+config/production.*
+*.env.production
+*.env.staging
+
+# ============================================
+# Arquivos de Deploy e CI/CD
+# ============================================
+
+# Arquivos de deploy
+deploy/
+*.war
+*.ear
+*.sar
+
+# CI/CD
+.github/workflows/*.local
+.gitlab-ci-local.yml
+
+# ============================================
+# Outros
+# ============================================
+
+# Arquivos de lock (manter package-lock.json mas ignorar outros)
+*.lock
+!package-lock.json
+
+# Arquivos de log
+*.log
+logs/
+*.log.*
+
+# Arquivos de sistema
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Arquivos de profiling
+*.hprof
+*.prof
+
+# Arquivos de memória
+*.dump
+heap-dump.hprof
