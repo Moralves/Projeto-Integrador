@@ -38,25 +38,59 @@ CREATE DATABASE pi_2025_2;
 ### 2. Configurar Backend
 
 Edite `backend/src/main/resources/application.properties`:
+
+**Para banco local:**
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/pi_2025_2
 spring.datasource.username=postgres
 spring.datasource.password=SUA_SENHA_AQUI
 ```
 
-### 3. Executar Aplicação
+**Para banco em outra máquina:**
+```properties
+spring.datasource.url=jdbc:postgresql://IP_OU_HOSTNAME:PORTA/NOME_DO_BANCO
+spring.datasource.username=USUARIO_POSTGRES
+spring.datasource.password=SENHA_POSTGRES
+```
+
+**Exemplo:**
+```properties
+spring.datasource.url=jdbc:postgresql://192.168.1.100:5432/pi_2025_2
+spring.datasource.username=postgres
+spring.datasource.password=minha_senha_segura
+```
+
+> **Nota:** Veja a seção [Configuração do Banco de Dados](#-configuração) para mais detalhes sobre conexão remota.
+
+### 3. Compilar e Executar Aplicação
 
 **Backend:**
-```powershell
-cd LifeTrack\backend
-java -jar target\sos-rota-0.0.1-SNAPSHOT.jar
-```
+
+1. **Compilar o projeto:**
+   ```powershell
+   cd LifeTrack\backend
+   .\mvnw.cmd clean install -DskipTests
+   ```
+
+2. **Executar o backend:**
+   ```powershell
+   java -jar target\sos-rota-0.0.1-SNAPSHOT.jar
+   ```
+
+   > **Nota:** A primeira vez que compilar pode demorar alguns minutos enquanto o Maven baixa as dependências.
 
 **Frontend (outro terminal):**
-```powershell
-cd LifeTrack\frontend
-npm run dev
-```
+
+1. **Instalar dependências (apenas na primeira vez):**
+   ```powershell
+   cd LifeTrack\frontend
+   npm install
+   ```
+
+2. **Executar o frontend:**
+   ```powershell
+   npm run dev
+   ```
 
 ### 4. Acessar
 
@@ -101,22 +135,124 @@ O guia inclui:
 
 ### Configuração do Banco de Dados
 
+#### Localização do Arquivo de Configuração
+
+Todas as configurações de conexão com o banco de dados ficam no arquivo:
+```
+LifeTrack/backend/src/main/resources/application.properties
+```
+
+#### Configuração para Banco Local
+
+Se o PostgreSQL está rodando na mesma máquina:
+
 1. **Criar o Banco:**
    ```sql
    CREATE DATABASE pi_2025_2;
    ```
 
-2. **Executar Schema:**
+2. **Configurar `application.properties`:**
+   ```properties
+   spring.datasource.url=jdbc:postgresql://localhost:5432/pi_2025_2
+   spring.datasource.username=postgres
+   spring.datasource.password=SUA_SENHA_POSTGRES
+   ```
+
+3. **Executar Schema:**
    - Abra `backend/src/main/resources/schema.sql` no DBeaver
    - Execute o script completo (`Ctrl+Enter`)
 
-3. **Adicionar Campos na Tabela de Usuários** (se necessário):
-   ```sql
-   ALTER TABLE usuarios 
-   ADD COLUMN IF NOT EXISTS nome VARCHAR(255),
-   ADD COLUMN IF NOT EXISTS email VARCHAR(255),
-   ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT TRUE;
+#### Configuração para Banco em Outra Máquina
+
+Para conectar a um banco de dados PostgreSQL em outra máquina na rede:
+
+1. **Edite o arquivo `backend/src/main/resources/application.properties`:**
+
+   ```properties
+   # Configuração do Banco de Dados PostgreSQL
+   spring.datasource.url=jdbc:postgresql://IP_OU_HOSTNAME:PORTA/NOME_DO_BANCO
+   spring.datasource.username=USUARIO_POSTGRES
+   spring.datasource.password=SENHA_POSTGRES
    ```
+
+2. **Parâmetros a configurar:**
+   - **`spring.datasource.url`**: 
+     - Substitua `IP_OU_HOSTNAME` pelo IP ou hostname da máquina remota (ex: `192.168.1.100` ou `servidor-db.local`)
+     - Substitua `PORTA` pela porta do PostgreSQL (padrão: `5432`)
+     - Substitua `NOME_DO_BANCO` pelo nome do banco (ex: `pi_2025_2`)
+     - **Exemplo:** `jdbc:postgresql://192.168.1.100:5432/pi_2025_2`
+   
+   - **`spring.datasource.username`**: 
+     - Usuário do PostgreSQL na máquina remota (ex: `postgres`)
+   
+   - **`spring.datasource.password`**: 
+     - Senha do usuário PostgreSQL
+
+3. **Exemplo completo:**
+   ```properties
+   # Configuração do Banco de Dados PostgreSQL
+   spring.datasource.url=jdbc:postgresql://192.168.1.100:5432/pi_2025_2
+   spring.datasource.username=postgres
+   spring.datasource.password=minha_senha_segura
+   
+   # Configuração JPA/Hibernate
+   spring.jpa.hibernate.ddl-auto=update
+   spring.jpa.show-sql=true
+   spring.jpa.properties.hibernate.format_sql=true
+   spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+   
+   # Porta do servidor
+   server.port=8081
+   ```
+
+4. **Configurações necessárias no servidor PostgreSQL remoto:**
+   
+   Para permitir conexões remotas, você precisa configurar o PostgreSQL na máquina remota:
+   
+   **a) Editar `postgresql.conf`:**
+   - Localize a linha: `listen_addresses = 'localhost'`
+   - Altere para: `listen_addresses = '*'` (ou o IP específico)
+   - Reinicie o PostgreSQL
+   
+   **b) Editar `pg_hba.conf`:**
+   - Adicione uma linha permitindo conexões da sua rede:
+   ```
+   host    all    all    0.0.0.0/0    md5
+   ```
+   - Ou para uma rede específica:
+   ```
+   host    all    all    192.168.1.0/24    md5
+   ```
+   - Reinicie o PostgreSQL
+   
+   **c) Firewall:**
+   - Certifique-se de que a porta 5432 (ou a porta configurada) está aberta no firewall da máquina remota
+   - No Windows: Configure regra de entrada no Firewall do Windows
+   - No Linux: `sudo ufw allow 5432/tcp`
+
+5. **Após alterar as configurações:**
+   
+   **a) Compilar o backend:**
+   ```powershell
+   cd LifeTrack\backend
+   .\mvnw.cmd clean install -DskipTests
+   ```
+   
+   **b) Executar o backend:**
+   ```powershell
+   java -jar target\sos-rota-0.0.1-SNAPSHOT.jar
+   ```
+   
+   > **Dica:** Se você já compilou anteriormente e só alterou o `application.properties`, pode executar diretamente sem recompilar. Mas se alterou código Java, sempre recompile antes de executar.
+
+#### Adicionar Campos na Tabela de Usuários (se necessário)
+
+```sql
+ALTER TABLE usuarios 
+ADD COLUMN IF NOT EXISTS nome VARCHAR(255),
+ADD COLUMN IF NOT EXISTS email VARCHAR(255),
+ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT TRUE;
+```
 
 ### Criar Usuário Admin
 
@@ -685,11 +821,24 @@ Altere em `application.properties`: `server.port=8082`
 
 ### Cannot Connect to Database
 
-**Verificações:**
+**Para banco local:**
 1. PostgreSQL está rodando?
 2. Senha correta no `application.properties`?
 3. Banco `pi_2025_2` existe?
 4. Nome do banco está em minúsculas?
+
+**Para banco remoto:**
+1. IP/hostname correto no `application.properties`?
+2. Porta do PostgreSQL está correta?
+3. Usuário e senha estão corretos?
+4. PostgreSQL na máquina remota está configurado para aceitar conexões remotas?
+   - Verifique `postgresql.conf` (listen_addresses)
+   - Verifique `pg_hba.conf` (permissões)
+5. Firewall permite conexões na porta do PostgreSQL?
+6. Teste a conexão manualmente:
+   ```powershell
+   psql -h IP_REMOTO -p PORTA -U USUARIO -d NOME_BANCO
+   ```
 
 ### Maven não encontrado
 
