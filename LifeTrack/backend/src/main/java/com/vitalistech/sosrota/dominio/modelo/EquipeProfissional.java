@@ -1,5 +1,6 @@
 package com.vitalistech.sosrota.dominio.modelo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 /**
@@ -7,6 +8,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "equipes_profissionais")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class EquipeProfissional {
 
     @Id
@@ -15,10 +17,12 @@ public class EquipeProfissional {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_equipe")
+    @JsonIgnoreProperties({"profissionais"}) // Evita referência circular
     private Equipe equipe;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_profissional")
+    @JsonIgnoreProperties({"equipes"}) // Evita referência circular
     private Profissional profissional;
 
     public Long getId() {

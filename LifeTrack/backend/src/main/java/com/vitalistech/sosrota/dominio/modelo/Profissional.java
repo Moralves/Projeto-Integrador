@@ -22,6 +22,14 @@ public class Profissional {
 
     private String contato;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Turno turno;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusProfissional status = StatusProfissional.DISPONIVEL;
+
     @Column(nullable = false)
     private boolean ativo = true;
 
@@ -63,5 +71,21 @@ public class Profissional {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public Turno getTurno() {
+        return turno;
+    }
+
+    public void setTurno(Turno turno) {
+        this.turno = turno;
+    }
+
+    public StatusProfissional getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusProfissional status) {
+        this.status = status;
     }
 }

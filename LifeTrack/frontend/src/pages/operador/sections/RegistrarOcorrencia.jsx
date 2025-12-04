@@ -60,13 +60,38 @@ function RegistrarOcorrencia({ onRegistroSuccess }) {
     setSuccess('');
     setLoading(true);
 
+    // Validação básica
+    if (!formData.idBairroLocal || formData.idBairroLocal === '') {
+      setError('Selecione um bairro');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.tipoOcorrencia || formData.tipoOcorrencia.trim() === '') {
+      setError('Informe o tipo de ocorrência');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.gravidade || formData.gravidade === '') {
+      setError('Selecione a gravidade');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await ocorrenciaService.registrar({
+      const dadosEnvio = {
         idBairroLocal: parseInt(formData.idBairroLocal),
-        tipoOcorrencia: formData.tipoOcorrencia,
-        gravidade: formData.gravidade,
-        observacoes: formData.observacoes || null
-      });
+        tipoOcorrencia: formData.tipoOcorrencia.trim(),
+        gravidade: formData.gravidade.toUpperCase(), // Garantir maiúsculas
+        observacoes: formData.observacoes && formData.observacoes.trim() !== '' 
+          ? formData.observacoes.trim() 
+          : null
+      };
+
+      console.log('Enviando dados:', dadosEnvio); // Debug
+
+      await ocorrenciaService.registrar(dadosEnvio);
 
       setSuccess('Ocorrência registrada com sucesso!');
       

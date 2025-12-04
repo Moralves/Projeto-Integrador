@@ -50,8 +50,22 @@ export const equipeService = {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Erro ao criar equipe');
+        let errorMessage = 'Erro ao criar equipe';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } else {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch (err) {
+          errorMessage = `Erro ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       return await response.json();

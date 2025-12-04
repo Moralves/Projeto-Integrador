@@ -8,6 +8,7 @@ import com.vitalistech.sosrota.dominio.repositorio.BairroRepositorio;
 import com.vitalistech.sosrota.dominio.repositorio.OcorrenciaRepositorio;
 import com.vitalistech.sosrota.dominio.repositorio.UsuarioRepositorio;
 import com.vitalistech.sosrota.dominio.servico.OcorrenciaServico;
+import com.vitalistech.sosrota.web.dto.AmbulanciaSugeridaDTO;
 import com.vitalistech.sosrota.web.dto.RegistrarOcorrenciaDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -44,28 +45,48 @@ public class OcorrenciaControlador {
     }
 
     @PostMapping
-    public ResponseEntity<Ocorrencia> registrar(
+    public ResponseEntity<?> registrar(
             @RequestBody @Valid RegistrarOcorrenciaDTO dto,
             @RequestHeader(value = "X-User-Id", required = false) Long userId) {
-        
-        Bairro bairroLocal = bairroRepositorio.findById(dto.getIdBairroLocal())
-                .orElseThrow(() -> new IllegalArgumentException("Bairro não encontrado"));
+        try {
+            if (dto.getIdBairroLocal() == null) {
+                return ResponseEntity.badRequest().body("ID do bairro é obrigatório");
+            }
 
-        Usuario usuarioRegistro = null;
-        if (userId != null) {
-            usuarioRegistro = usuarioRepositorio.findById(userId)
-                    .orElse(null);
+            Bairro bairroLocal = bairroRepositorio.findById(dto.getIdBairroLocal())
+                    .orElseThrow(() -> new IllegalArgumentException("Bairro não encontrado"));
+
+            if (dto.getGravidade() == null) {
+                return ResponseEntity.badRequest().body("Gravidade é obrigatória");
+            }
+
+            Usuario usuarioRegistro = null;
+            if (userId != null) {
+                usuarioRegistro = usuarioRepositorio.findById(userId)
+                        .orElse(null);
+            }
+
+            Ocorrencia ocorrencia = ocorrenciaServico.registrarOcorrencia(
+                    bairroLocal,
+                    dto.getTipoOcorrencia(),
+                    dto.getGravidade(),
+                    dto.getObservacoes(),
+                    usuarioRegistro
+            );
+
+            return ResponseEntity.ok(ocorrencia);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }
+    }
 
-        Ocorrencia ocorrencia = ocorrenciaServico.registrarOcorrencia(
-                bairroLocal,
-                dto.getTipoOcorrencia(),
-                dto.getGravidade(),
-                dto.getObservacoes(),
-                usuarioRegistro
-        );
-
-        return ResponseEntity.ok(ocorrencia);
+    @GetMapping("/{id}/ambulancias-sugeridas")
+    public ResponseEntity<List<AmbulanciaSugeridaDTO>> sugerirAmbulancias(@PathVariable Long id) {
+        List<AmbulanciaSugeridaDTO> sugestoes = ocorrenciaServico.sugerirAmbulancias(id);
+        return ResponseEntity.ok(sugestoes);
     }
 
     @PostMapping("/{id}/despachar")

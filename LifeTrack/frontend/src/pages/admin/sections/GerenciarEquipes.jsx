@@ -27,11 +27,11 @@ function GerenciarEquipes() {
       const [equipesData, ambData, profData] = await Promise.all([
         equipeService.listarEquipes(),
         ambulanciaService.listar(),
-        profissionalService.listar(),
+        profissionalService.listarDisponiveis(), // Só profissionais disponíveis
       ]);
       setEquipes(equipesData);
       setAmbulancias(ambData);
-      setProfissionais(profData.filter(p => p.ativo));
+      setProfissionais(profData.filter(p => p.ativo && p.status === 'DISPONIVEL'));
       setError('');
     } catch (err) {
       setError('Erro ao carregar dados: ' + err.message);
@@ -166,18 +166,21 @@ function GerenciarEquipes() {
                 <label>Profissionais *</label>
                 <div className="roles-checkbox" style={{ flexDirection: 'column', gap: '8px' }}>
                   {profissionais.map(prof => (
-                    <label key={prof.id}>
+                    <label key={prof.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input
                         type="checkbox"
                         checked={formData.idsProfissionais.includes(prof.id.toString())}
                         onChange={() => handleToggleProfissional(prof.id.toString())}
                       />
-                      {prof.nome} - {prof.funcao}
+                      <span>
+                        {prof.nome} - {prof.funcao}
+                        {prof.turno && <span style={{ color: '#666', fontSize: '0.85rem' }}> ({prof.turno})</span>}
+                      </span>
                     </label>
                   ))}
                 </div>
                 {profissionais.length === 0 && (
-                  <small style={{ color: '#999' }}>Nenhum profissional ativo disponível</small>
+                  <small style={{ color: '#999' }}>Nenhum profissional disponível. Verifique se há profissionais DISPONÍVEIS e no mesmo turno.</small>
                 )}
               </div>
               {error && <div className="form-error">{error}</div>}

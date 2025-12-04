@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ocorrenciaService } from '../../../services/ocorrenciaService';
+import SugerirAmbulancias from './SugerirAmbulancias';
 import '../OperatorLayout.css';
 
 function ListarOcorrencias() {
@@ -10,6 +11,7 @@ function ListarOcorrencias() {
   const [filtroGravidade, setFiltroGravidade] = useState('TODAS');
   const [busca, setBusca] = useState('');
   const [despachando, setDespachando] = useState(null);
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(null);
 
   useEffect(() => {
     carregarOcorrencias();
@@ -45,6 +47,10 @@ function ListarOcorrencias() {
     } finally {
       setDespachando(null);
     }
+  };
+
+  const handleDespacharAposSugestao = async () => {
+    await carregarOcorrencias();
   };
 
   const formatarData = (data) => {
@@ -258,23 +264,40 @@ function ListarOcorrencias() {
                     <td style={{ padding: '16px' }}>{getStatusBadge(oc.status)}</td>
                     <td style={{ padding: '16px' }}>
                       {oc.status === 'ABERTA' && (
-                        <button
-                          onClick={() => handleDespachar(oc.id)}
-                          disabled={despachando === oc.id}
-                          style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontSize: '0.875rem',
-                            fontWeight: '600',
-                            cursor: despachando === oc.id ? 'not-allowed' : 'pointer',
-                            opacity: despachando === oc.id ? 0.6 : 1
-                          }}
-                        >
-                          {despachando === oc.id ? 'Despachando...' : '🚑 Despachar'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => setMostrarSugestoes(oc.id)}
+                            style={{
+                              padding: '8px 16px',
+                              backgroundColor: '#2563eb',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.875rem',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🔍 Ver Sugestões
+                          </button>
+                          <button
+                            onClick={() => handleDespachar(oc.id)}
+                            disabled={despachando === oc.id}
+                            style={{
+                              padding: '8px 16px',
+                              backgroundColor: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.875rem',
+                              fontWeight: '600',
+                              cursor: despachando === oc.id ? 'not-allowed' : 'pointer',
+                              opacity: despachando === oc.id ? 0.6 : 1
+                            }}
+                          >
+                            {despachando === oc.id ? 'Despachando...' : '🚑 Despachar'}
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -283,6 +306,14 @@ function ListarOcorrencias() {
             </table>
           </div>
         </div>
+      )}
+
+      {mostrarSugestoes && (
+        <SugerirAmbulancias
+          ocorrenciaId={mostrarSugestoes}
+          onDespachar={handleDespacharAposSugestao}
+          onClose={() => setMostrarSugestoes(null)}
+        />
       )}
     </div>
   );

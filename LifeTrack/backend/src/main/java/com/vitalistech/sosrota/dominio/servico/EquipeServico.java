@@ -39,12 +39,42 @@ public class EquipeServico {
         boolean temEnfermeiro = false;
         boolean temMedico = false;
 
+        // Validar profissionais e verificar turnos
+        Turno turnoEquipe = null;
+        
         for (Long idProf : idsProfissionais) {
             Profissional p = profissionalRepositorio.findById(idProf)
                     .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
 
+            // Validar se profissional está ativo
+            if (!p.isAtivo()) {
+                throw new IllegalStateException("Profissional " + p.getNome() + " está inativo.");
+            }
+
+            // Validar status: não pode estar em atendimento, em folga ou inativo
+            if (p.getStatus() == StatusProfissional.EM_ATENDIMENTO) {
+                throw new IllegalStateException("Profissional " + p.getNome() + " está em atendimento e não pode ser adicionado a uma equipe.");
+            }
+            
+            if (p.getStatus() == StatusProfissional.EM_FOLGA) {
+                throw new IllegalStateException("Profissional " + p.getNome() + " está em folga e não pode ser adicionado a uma equipe.");
+            }
+            
+            if (p.getStatus() == StatusProfissional.INATIVO) {
+                throw new IllegalStateException("Profissional " + p.getNome() + " está inativo e não pode ser adicionado a uma equipe.");
+            }
+
             if (equipeRepositorio.profissionalEmEquipeAtiva(idProf) > 0) {
                 throw new IllegalStateException("Profissional " + p.getNome() + " já está em uma equipe ativa.");
+            }
+
+            // Validar turno: todos os profissionais devem estar no mesmo turno
+            if (turnoEquipe == null) {
+                turnoEquipe = p.getTurno();
+            } else if (turnoEquipe != p.getTurno()) {
+                throw new IllegalStateException("Todos os profissionais devem estar no mesmo turno. " + 
+                        p.getNome() + " está no turno " + p.getTurno().name() + 
+                        ", mas outros estão no turno " + turnoEquipe.name() + ".");
             }
 
             if (p.getFuncao() == FuncaoProfissional.CONDUTOR) temCondutor = true;
@@ -78,6 +108,13 @@ public class EquipeServico {
             ep.setEquipe(equipe);
             ep.setProfissional(p);
             equipe.getProfissionais().add(ep);
+            
+            // Marcar profissional como disponível (já está na equipe, mas ainda não em atendimento)
+            // O status será alterado para EM_ATENDIMENTO quando a equipe for despachada
+            if (p.getStatus() != StatusProfissional.DISPONIVEL) {
+                p.setStatus(StatusProfissional.DISPONIVEL);
+                profissionalRepositorio.save(p);
+            }
         }
 
         return equipeRepositorio.save(equipe);

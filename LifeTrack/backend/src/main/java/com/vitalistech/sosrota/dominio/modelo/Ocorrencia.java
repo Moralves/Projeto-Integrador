@@ -16,7 +16,7 @@ public class Ocorrencia {
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "id_bairro_local")
+    @JoinColumn(name = "id_bairro_origem")
     private Bairro bairroLocal;
 
     @Column(nullable = false)
@@ -26,15 +26,18 @@ public class Ocorrencia {
     @Column(nullable = false)
     private Gravidade gravidade;
 
-    @Column(nullable = false)
+    @Column(name = "data_registro", nullable = false)
     private LocalDateTime dataHoraAbertura;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, name = "status")
     private StatusOcorrencia status;
 
     @Column(length = 1000)
     private String observacoes;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String descricao;
 
     @ManyToOne
     @JoinColumn(name = "id_usuario_registro")
@@ -94,6 +97,14 @@ public class Ocorrencia {
 
     public void setObservacoes(String observacoes) {
         this.observacoes = observacoes;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
     }
 
     public Usuario getUsuarioRegistro() {

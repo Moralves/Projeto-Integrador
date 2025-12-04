@@ -66,27 +66,33 @@ CREATE TABLE IF NOT EXISTS equipe_profissional (
 CREATE TABLE IF NOT EXISTS ocorrencias (
     id BIGSERIAL PRIMARY KEY,
     descricao TEXT NOT NULL,
+    tipo_ocorrencia VARCHAR(255) NOT NULL,
     gravidade VARCHAR(20) NOT NULL CHECK (gravidade IN ('BAIXA', 'MEDIA', 'ALTA', 'CRITICA')),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('PENDENTE', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA')),
+    status VARCHAR(20) NOT NULL CHECK (status IN ('ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA')),
     id_bairro_origem BIGINT NOT NULL,
     id_bairro_destino BIGINT,
     id_equipe_atribuida BIGINT,
     data_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    observacoes VARCHAR(1000),
+    id_usuario_registro BIGINT,
     FOREIGN KEY (id_bairro_origem) REFERENCES bairros(id),
     FOREIGN KEY (id_bairro_destino) REFERENCES bairros(id),
-    FOREIGN KEY (id_equipe_atribuida) REFERENCES equipes(id)
+    FOREIGN KEY (id_equipe_atribuida) REFERENCES equipes(id),
+    FOREIGN KEY (id_usuario_registro) REFERENCES usuarios(id)
 );
 
 -- Tabela de atendimentos
 CREATE TABLE IF NOT EXISTS atendimentos (
     id BIGSERIAL PRIMARY KEY,
     id_ocorrencia BIGINT NOT NULL,
-    id_equipe BIGINT NOT NULL,
-    data_inicio TIMESTAMP,
-    data_fim TIMESTAMP,
-    observacoes TEXT,
+    id_ambulancia BIGINT NOT NULL,
+    data_hora_despacho TIMESTAMP,
+    data_hora_chegada TIMESTAMP,
+    distancia_km DECIMAL(10, 2),
+    id_usuario_despacho BIGINT,
     FOREIGN KEY (id_ocorrencia) REFERENCES ocorrencias(id),
-    FOREIGN KEY (id_equipe) REFERENCES equipes(id)
+    FOREIGN KEY (id_ambulancia) REFERENCES ambulancias(id),
+    FOREIGN KEY (id_usuario_despacho) REFERENCES usuarios(id)
 );
 
 -- Tabela de usuários (para futura autenticação)
