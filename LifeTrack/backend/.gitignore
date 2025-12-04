@@ -1,0 +1,25 @@
+# Maven
+target/
+
+# IDE
+.vscode/
+.idea/
+
+# Compiled class files
+*.class
+
+# Logs
+*.log
+
+# Package files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# OS files
+.DS_Store
+Thumbs.db
+
