@@ -10,6 +10,7 @@ com\vitalistech\sosrota\web\dto\CriarEquipeDTO.class
 com\example\app\model\ExampleModel.class
 com\vitalistech\sosrota\dominio\modelo\RuaConexao.class
 com\vitalistech\sosrota\web\controlador\UsuarioControlador.class
+com\vitalistech\sosrota\dominio\modelo\HistoricoOcorrencia.class
 com\vitalistech\sosrota\web\controlador\AmbulanciaControlador.class
 com\vitalistech\sosrota\web\controlador\RelatorioControlador.class
 com\vitalistech\sosrota\dominio\modelo\EquipeProfissional.class
@@ -17,7 +18,9 @@ com\vitalistech\sosrota\util\AlgoritmoDijkstra.class
 com\example\app\Application.class
 com\vitalistech\sosrota\dominio\repositorio\OcorrenciaRepositorio.class
 com\vitalistech\sosrota\web\controlador\UtilControlador.class
+com\vitalistech\sosrota\dominio\modelo\AcaoHistorico.class
 com\vitalistech\sosrota\dominio\modelo\Ambulancia.class
+com\vitalistech\sosrota\dominio\servico\HistoricoOcorrenciaServico.class
 com\vitalistech\sosrota\SosRotaApplication.class
 com\vitalistech\sosrota\web\controlador\EquipeControlador.class
 com\vitalistech\sosrota\dominio\repositorio\EquipeRepositorio.class
@@ -31,6 +34,7 @@ com\vitalistech\sosrota\web\controlador\BairroControlador.class
 com\vitalistech\sosrota\dominio\modelo\Bairro.class
 com\example\app\controller\ExampleController.class
 com\vitalistech\sosrota\web\dto\RegistrarOcorrenciaDTO.class
+com\vitalistech\sosrota\web\controlador\HistoricoOcorrenciaControlador.class
 com\vitalistech\sosrota\dominio\modelo\TipoAmbulancia.class
 com\vitalistech\sosrota\web\dto\EditarProfissionalDTO.class
 com\vitalistech\sosrota\dominio\servico\EquipeServico.class
@@ -45,6 +49,7 @@ com\vitalistech\sosrota\dominio\modelo\FuncaoProfissional.class
 com\vitalistech\sosrota\config\ConfiguracaoSenha.class
 com\vitalistech\sosrota\dominio\repositorio\BairroRepositorio.class
 com\vitalistech\sosrota\dominio\servico\OcorrenciaServico.class
+com\vitalistech\sosrota\config\InicializadorBancoDados.class
 com\vitalistech\sosrota\dominio\repositorio\AtendimentoRepositorio.class
 com\vitalistech\sosrota\dominio\modelo\StatusOcorrencia.class
 com\vitalistech\sosrota\web\dto\CriarAmbulanciaDTO.class
@@ -53,6 +58,8 @@ com\vitalistech\sosrota\web\dto\UsuarioDTO.class
 com\vitalistech\sosrota\dominio\servico\AnaliseEstrategicaServico.class
 com\vitalistech\sosrota\dominio\modelo\Turno.class
 com\vitalistech\sosrota\web\controlador\OcorrenciaControlador.class
+com\vitalistech\sosrota\web\dto\HistoricoOcorrenciaDTO.class
+com\vitalistech\sosrota\dominio\repositorio\HistoricoOcorrenciaRepositorio.class
 com\vitalistech\sosrota\dominio\modelo\Profissional.class
 com\vitalistech\sosrota\config\CarregamentoDadosIniciaisModel.class
 com\example\app\service\ExampleService.class

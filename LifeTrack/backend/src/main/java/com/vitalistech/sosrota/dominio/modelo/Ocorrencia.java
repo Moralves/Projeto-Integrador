@@ -26,7 +26,7 @@ public class Ocorrencia {
     @Column(nullable = false)
     private Gravidade gravidade;
 
-    @Column(name = "data_registro", nullable = false)
+    @Column(name = "data_hora_abertura", nullable = false)
     private LocalDateTime dataHoraAbertura;
 
     @Enumerated(EnumType.STRING)
@@ -42,6 +42,21 @@ public class Ocorrencia {
     @ManyToOne
     @JoinColumn(name = "id_usuario_registro")
     private Usuario usuarioRegistro;
+
+    @Column(name = "data_hora_fechamento")
+    private LocalDateTime dataHoraFechamento;
+
+    @Column(name = "tempo_atendimento_minutos")
+    private Integer tempoAtendimentoMinutos;
+
+    @Column(name = "sla_minutos")
+    private Integer slaMinutos;
+
+    @Column(name = "sla_cumprido")
+    private Boolean slaCumprido;
+
+    @Column(name = "tempo_excedido_minutos")
+    private Integer tempoExcedidoMinutos;
 
     public Long getId() {
         return id;
@@ -113,5 +128,45 @@ public class Ocorrencia {
 
     public void setUsuarioRegistro(Usuario usuarioRegistro) {
         this.usuarioRegistro = usuarioRegistro;
+    }
+
+    public LocalDateTime getDataHoraFechamento() {
+        return dataHoraFechamento;
+    }
+
+    public void setDataHoraFechamento(LocalDateTime dataHoraFechamento) {
+        this.dataHoraFechamento = dataHoraFechamento;
+    }
+
+    public Integer getTempoAtendimentoMinutos() {
+        return tempoAtendimentoMinutos;
+    }
+
+    public void setTempoAtendimentoMinutos(Integer tempoAtendimentoMinutos) {
+        this.tempoAtendimentoMinutos = tempoAtendimentoMinutos;
+    }
+
+    public Integer getSlaMinutos() {
+        return slaMinutos;
+    }
+
+    public void setSlaMinutos(Integer slaMinutos) {
+        this.slaMinutos = slaMinutos;
+    }
+
+    public Boolean getSlaCumprido() {
+        return slaCumprido;
+    }
+
+    public void setSlaCumprido(Boolean slaCumprido) {
+        this.slaCumprido = slaCumprido;
+    }
+
+    public Integer getTempoExcedidoMinutos() {
+        return tempoExcedidoMinutos;
+    }
+
+    public void setTempoExcedidoMinutos(Integer tempoExcedidoMinutos) {
+        this.tempoExcedidoMinutos = tempoExcedidoMinutos;
     }
 }

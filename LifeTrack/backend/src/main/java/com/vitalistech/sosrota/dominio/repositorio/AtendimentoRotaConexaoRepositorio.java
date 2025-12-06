@@ -21,3 +21,6 @@ public interface AtendimentoRotaConexaoRepositorio extends JpaRepository<Atendim
 }
 
 
+
+
+

@@ -26,7 +26,7 @@ INSERT INTO bairros (nome) VALUES
 
 ---
 
-### 2. **rua_conexoes** (OBRIGATÓRIA - Mínimo: 1 conexão)
+### 2. **ruas_conexoes** (OBRIGATÓRIA - Mínimo: 1 conexão)
 **Descrição:** Arestas do grafo (conexões entre bairros) para o Dijkstra.
 
 **Dados Mínimos:**
@@ -37,7 +37,7 @@ INSERT INTO bairros (nome) VALUES
 **Exemplo:**
 ```sql
 -- Conectar Centro com Jardim das Flores (distância de 5 km)
-INSERT INTO rua_conexoes (id_bairro_origem, id_bairro_destino, distancia_km) 
+INSERT INTO ruas_conexoes (id_bairro_origem, id_bairro_destino, distancia_km) 
 VALUES (1, 2, 5.0);
 ```
 
@@ -257,7 +257,7 @@ VALUES ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
 
 ### Configuração Básica (Mínimo Absoluto):
 - [ ] **2 bairros** cadastrados
-- [ ] **1 conexão** entre os bairros (rua_conexoes)
+- [ ] **1 conexão** entre os bairros (ruas_conexoes)
 - [ ] **2 profissionais** (1 CONDUTOR + 1 ENFERMEIRO) - mesmo turno
 - [ ] **1 ambulância BÁSICA** cadastrada
 - [ ] **1 equipe** vinculada à ambulância
@@ -285,7 +285,7 @@ INSERT INTO bairros (nome) VALUES
 ON CONFLICT (nome) DO NOTHING;
 
 -- 2. CONEXÕES (mínimo 1, recomendado N-1)
-INSERT INTO rua_conexoes (id_bairro_origem, id_bairro_destino, distancia_km) 
+INSERT INTO ruas_conexoes (id_bairro_origem, id_bairro_destino, distancia_km) 
 VALUES 
     (1, 2, 5.0),  -- Centro → Jardim (5 km)
     (2, 3, 3.5),  -- Jardim → Vila Nova (3.5 km)
@@ -353,7 +353,7 @@ ON CONFLICT (id_equipe, id_profissional) DO NOTHING;
 | Tabela | Mínimo | Recomendado | Obrigatória? |
 |--------|--------|-------------|--------------|
 | **bairros** | 2 | 3-5 | ✅ SIM |
-| **rua_conexoes** | 1 | N-1 | ✅ SIM |
+| **ruas_conexoes** | 1 | N-1 | ✅ SIM |
 | **profissionais** | 2 (BÁSICA) / 3 (UTI) | 6-9 | ✅ SIM |
 | **ambulancias** | 1 | 2 | ✅ SIM |
 | **equipes** | 1 | 2 | ✅ SIM |

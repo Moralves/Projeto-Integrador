@@ -26,28 +26,29 @@ public class OcorrenciaServico {
     private final AtendimentoRepositorio atendimentoRepositorio;
     private final RuaConexaoRepositorio ruaConexaoRepositorio;
     private final EquipeRepositorio equipeRepositorio;
-    private final UsuarioRepositorio usuarioRepositorio;
     private final ProfissionalRepositorio profissionalRepositorio;
     private final AtendimentoRotaConexaoRepositorio atendimentoRotaConexaoRepositorio;
+    private final HistoricoOcorrenciaServico historicoOcorrenciaServico;
 
     public OcorrenciaServico(OcorrenciaRepositorio ocorrenciaRepositorio,
                              AmbulanciaRepositorio ambulanciaRepositorio,
                              AtendimentoRepositorio atendimentoRepositorio,
                              RuaConexaoRepositorio ruaConexaoRepositorio,
                              EquipeRepositorio equipeRepositorio,
-                             UsuarioRepositorio usuarioRepositorio,
                              ProfissionalRepositorio profissionalRepositorio,
-                             AtendimentoRotaConexaoRepositorio atendimentoRotaConexaoRepositorio) {
+                             AtendimentoRotaConexaoRepositorio atendimentoRotaConexaoRepositorio,
+                             HistoricoOcorrenciaServico historicoOcorrenciaServico) {
         this.ocorrenciaRepositorio = ocorrenciaRepositorio;
         this.ambulanciaRepositorio = ambulanciaRepositorio;
         this.atendimentoRepositorio = atendimentoRepositorio;
         this.ruaConexaoRepositorio = ruaConexaoRepositorio;
         this.equipeRepositorio = equipeRepositorio;
-        this.usuarioRepositorio = usuarioRepositorio;
         this.profissionalRepositorio = profissionalRepositorio;
         this.atendimentoRotaConexaoRepositorio = atendimentoRotaConexaoRepositorio;
+        this.historicoOcorrenciaServico = historicoOcorrenciaServico;
     }
 
+    @Transactional
     public Ocorrencia registrarOcorrencia(Bairro bairroLocal,
                                           String tipoOcorrencia,
                                           Gravidade gravidade,
@@ -69,8 +70,25 @@ public class OcorrenciaServico {
         ocorrencia.setDataHoraAbertura(LocalDateTime.now());
         ocorrencia.setStatusOcorrencia(StatusOcorrencia.ABERTA);
         ocorrencia.setUsuarioRegistro(usuarioRegistro);
+        
+        // Definir SLA baseado na gravidade
+        ocorrencia.setSlaMinutos(calcularSlaPorGravidade(gravidade));
 
-        return ocorrenciaRepositorio.save(ocorrencia);
+        ocorrencia = ocorrenciaRepositorio.save(ocorrencia);
+
+        // Registrar no histórico se houver usuário
+        if (usuarioRegistro != null) {
+            try {
+                historicoOcorrenciaServico.registrarAbertura(ocorrencia, usuarioRegistro);
+            } catch (Exception e) {
+                // Log do erro mas não interrompe o fluxo
+                // O histórico é importante mas não deve impedir a criação da ocorrência
+                System.err.println("Erro ao registrar histórico de abertura: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return ocorrencia;
     }
 
     /**
@@ -168,6 +186,23 @@ public class OcorrenciaServico {
 
         atendimento = atendimentoRepositorio.save(atendimento);
 
+        // Registrar no histórico se houver usuário
+        if (usuarioDespacho != null) {
+            try {
+                String detalhesDespacho = String.format(
+                    "Ambulância: %s (%s) - Distância: %.2f km",
+                    melhorAmbulancia.getPlaca(),
+                    melhorAmbulancia.getTipo().name(),
+                    menorDistancia
+                );
+                historicoOcorrenciaServico.registrarDespacho(ocorrencia, usuarioDespacho, detalhesDespacho);
+            } catch (Exception e) {
+                // Log do erro mas não interrompe o fluxo
+                System.err.println("Erro ao registrar histórico de despacho: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
         // Salvar o caminho calculado pelo Dijkstra (conexões de rua utilizadas)
         if (melhorRota != null && melhorRota.getCaminho() != null && melhorRota.getCaminho().size() > 1) {
             salvarCaminhoCalculado(atendimento, melhorRota.getCaminho(), todasConexoes);
@@ -210,17 +245,14 @@ public class OcorrenciaServico {
 
         // Calcular SLA baseado na gravidade
         TipoAmbulancia tipoNecessario;
-        int slaMinutos;
+        int slaMinutos = ocorrencia.getSlaMinutos() != null 
+                ? ocorrencia.getSlaMinutos() 
+                : calcularSlaPorGravidade(ocorrencia.getGravidade());
 
         if (ocorrencia.getGravidade() == Gravidade.ALTA) {
             tipoNecessario = TipoAmbulancia.UTI;
-            slaMinutos = 8;
-        } else if (ocorrencia.getGravidade() == Gravidade.MEDIA) {
-            tipoNecessario = TipoAmbulancia.BASICA;
-            slaMinutos = 15;
         } else {
             tipoNecessario = TipoAmbulancia.BASICA;
-            slaMinutos = 30;
         }
 
         // Buscar ambulâncias disponíveis
@@ -346,5 +378,210 @@ public class OcorrenciaServico {
                 ordem++;
             }
         }
+    }
+
+    /**
+     * Calcula o SLA em minutos baseado na gravidade da ocorrência.
+     * ALTA = 8 minutos, MÉDIA = 15 minutos, BAIXA = 30 minutos.
+     */
+    private int calcularSlaPorGravidade(Gravidade gravidade) {
+        if (gravidade == Gravidade.ALTA) {
+            return 8;
+        } else if (gravidade == Gravidade.MEDIA) {
+            return 15;
+        } else {
+            return 30; // BAIXA
+        }
+    }
+
+    /**
+     * Conclui uma ocorrência, calculando o tempo de atendimento e verificando se o SLA foi cumprido.
+     * 
+     * @param idOcorrencia ID da ocorrência a ser concluída
+     * @param usuarioConclusao Usuário que está concluindo a ocorrência
+     * @return Ocorrência concluída com dados de SLA preenchidos
+     */
+    @Transactional
+    public Ocorrencia concluirOcorrencia(Long idOcorrencia, Usuario usuarioConclusao) {
+        Ocorrencia ocorrencia = ocorrenciaRepositorio.findById(idOcorrencia)
+                .orElseThrow(() -> new IllegalArgumentException("Ocorrência não encontrada"));
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.CONCLUIDA) {
+            throw new IllegalStateException("Ocorrência já está concluída");
+        }
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.CANCELADA) {
+            throw new IllegalStateException("Ocorrência cancelada não pode ser concluída");
+        }
+
+        // Capturar status anterior antes de alterar
+        StatusOcorrencia statusAnterior = ocorrencia.getStatus();
+        
+        LocalDateTime agora = LocalDateTime.now();
+        ocorrencia.setDataHoraFechamento(agora);
+        ocorrencia.setStatusOcorrencia(StatusOcorrencia.CONCLUIDA);
+
+        // Calcular tempo de atendimento em minutos
+        LocalDateTime dataAbertura = ocorrencia.getDataHoraAbertura();
+        if (dataAbertura != null) {
+            long minutos = java.time.Duration.between(dataAbertura, agora).toMinutes();
+            ocorrencia.setTempoAtendimentoMinutos((int) minutos);
+        }
+
+        // Garantir que SLA está definido
+        if (ocorrencia.getSlaMinutos() == null) {
+            ocorrencia.setSlaMinutos(calcularSlaPorGravidade(ocorrencia.getGravidade()));
+        }
+
+        // Verificar se SLA foi cumprido
+        if (ocorrencia.getTempoAtendimentoMinutos() != null && ocorrencia.getSlaMinutos() != null) {
+            ocorrencia.setSlaCumprido(ocorrencia.getTempoAtendimentoMinutos() <= ocorrencia.getSlaMinutos());
+        } else {
+            ocorrencia.setSlaCumprido(false);
+        }
+
+        ocorrencia = ocorrenciaRepositorio.save(ocorrencia);
+
+        // Registrar no histórico
+        if (usuarioConclusao != null) {
+            try {
+                String descricao = String.format(
+                    "Ocorrência concluída. Tempo de atendimento: %d minutos. SLA: %d minutos. %s",
+                    ocorrencia.getTempoAtendimentoMinutos() != null ? ocorrencia.getTempoAtendimentoMinutos() : 0,
+                    ocorrencia.getSlaMinutos() != null ? ocorrencia.getSlaMinutos() : 0,
+                    ocorrencia.getSlaCumprido() != null && ocorrencia.getSlaCumprido() 
+                        ? "SLA CUMPRIDO" 
+                        : "SLA NÃO CUMPRIDO"
+                );
+                
+                historicoOcorrenciaServico.registrarAcao(
+                    ocorrencia,
+                    usuarioConclusao,
+                    AcaoHistorico.CONCLUSAO,
+                    statusAnterior,
+                    StatusOcorrencia.CONCLUIDA,
+                    descricao
+                );
+            } catch (Exception e) {
+                System.err.println("Erro ao registrar histórico de conclusão: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return ocorrencia;
+    }
+
+    /**
+     * Registra a chegada da ambulância ao local e fecha automaticamente a ocorrência.
+     * Calcula tempo de atendimento, verifica SLA e registra quanto excedeu (se houver).
+     * 
+     * @param idAtendimento ID do atendimento
+     * @param usuarioChegada Usuário que está registrando a chegada (pode ser null)
+     * @return Ocorrência fechada com dados de SLA calculados
+     */
+    @Transactional
+    public Ocorrencia registrarChegadaEFechar(Long idAtendimento, Usuario usuarioChegada) {
+        Atendimento atendimento = atendimentoRepositorio.findById(idAtendimento)
+                .orElseThrow(() -> new IllegalArgumentException("Atendimento não encontrado"));
+
+        if (atendimento.getDataHoraChegada() != null) {
+            throw new IllegalStateException("Chegada já foi registrada para este atendimento");
+        }
+
+        Ocorrencia ocorrencia = atendimento.getOcorrencia();
+        if (ocorrencia == null) {
+            throw new IllegalStateException("Atendimento não possui ocorrência associada");
+        }
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.CONCLUIDA) {
+            throw new IllegalStateException("Ocorrência já está concluída");
+        }
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.CANCELADA) {
+            throw new IllegalStateException("Ocorrência cancelada não pode ser fechada");
+        }
+
+        // Capturar status anterior
+        StatusOcorrencia statusAnterior = ocorrencia.getStatus();
+
+        // Registrar chegada
+        LocalDateTime agora = LocalDateTime.now();
+        atendimento.setDataHoraChegada(agora);
+        atendimentoRepositorio.save(atendimento);
+
+        // Fechar ocorrência
+        ocorrencia.setDataHoraFechamento(agora);
+        ocorrencia.setStatusOcorrencia(StatusOcorrencia.CONCLUIDA);
+
+        // Calcular tempo de atendimento em minutos (da abertura até a chegada)
+        LocalDateTime dataAbertura = ocorrencia.getDataHoraAbertura();
+        if (dataAbertura != null) {
+            long minutos = java.time.Duration.between(dataAbertura, agora).toMinutes();
+            ocorrencia.setTempoAtendimentoMinutos((int) minutos);
+        }
+
+        // Garantir que SLA está definido
+        if (ocorrencia.getSlaMinutos() == null) {
+            ocorrencia.setSlaMinutos(calcularSlaPorGravidade(ocorrencia.getGravidade()));
+        }
+
+        // Verificar se SLA foi cumprido e calcular tempo excedido
+        if (ocorrencia.getTempoAtendimentoMinutos() != null && ocorrencia.getSlaMinutos() != null) {
+            int tempoAtendimento = ocorrencia.getTempoAtendimentoMinutos();
+            int slaMinutos = ocorrencia.getSlaMinutos();
+            
+            if (tempoAtendimento <= slaMinutos) {
+                // SLA cumprido
+                ocorrencia.setSlaCumprido(true);
+                ocorrencia.setTempoExcedidoMinutos(null); // null indica que não excedeu
+            } else {
+                // SLA não cumprido - calcular quanto excedeu
+                ocorrencia.setSlaCumprido(false);
+                ocorrencia.setTempoExcedidoMinutos(tempoAtendimento - slaMinutos);
+            }
+        } else {
+            ocorrencia.setSlaCumprido(false);
+            ocorrencia.setTempoExcedidoMinutos(null);
+        }
+
+        ocorrencia = ocorrenciaRepositorio.save(ocorrencia);
+
+        // Registrar no histórico
+        if (usuarioChegada != null) {
+            try {
+                String descricao;
+                if (ocorrencia.getSlaCumprido() != null && ocorrencia.getSlaCumprido()) {
+                    descricao = String.format(
+                        "Ambulância chegou ao local. Ocorrência fechada automaticamente. " +
+                        "Tempo de atendimento: %d minutos. SLA: %d minutos. SLA CUMPRIDO.",
+                        ocorrencia.getTempoAtendimentoMinutos() != null ? ocorrencia.getTempoAtendimentoMinutos() : 0,
+                        ocorrencia.getSlaMinutos() != null ? ocorrencia.getSlaMinutos() : 0
+                    );
+                } else {
+                    descricao = String.format(
+                        "Ambulância chegou ao local. Ocorrência fechada automaticamente. " +
+                        "Tempo de atendimento: %d minutos. SLA: %d minutos. SLA NÃO CUMPRIDO. " +
+                        "Tempo excedido: %d minutos.",
+                        ocorrencia.getTempoAtendimentoMinutos() != null ? ocorrencia.getTempoAtendimentoMinutos() : 0,
+                        ocorrencia.getSlaMinutos() != null ? ocorrencia.getSlaMinutos() : 0,
+                        ocorrencia.getTempoExcedidoMinutos() != null ? ocorrencia.getTempoExcedidoMinutos() : 0
+                    );
+                }
+                
+                historicoOcorrenciaServico.registrarAcao(
+                    ocorrencia,
+                    usuarioChegada,
+                    AcaoHistorico.CONCLUSAO,
+                    statusAnterior,
+                    StatusOcorrencia.CONCLUIDA,
+                    descricao
+                );
+            } catch (Exception e) {
+                System.err.println("Erro ao registrar histórico de chegada: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return ocorrencia;
     }
 }

@@ -76,7 +76,9 @@ function GerenciarAmbulancias() {
     setBairrosSugeridos([]);
     setLoadingSugestoes(true);
     try {
-      const sugestoes = await analiseEstrategicaService.obterBairrosSugeridos();
+      // Passar o tipo de ambulância selecionado para análise estratégica
+      const tipoAmbulancia = formData.tipo || null;
+      const sugestoes = await analiseEstrategicaService.obterBairrosSugeridos(tipoAmbulancia);
       setBairrosSugeridos(sugestoes.slice(0, 5)); // Top 5 sugestões
     } catch (err) {
       console.error('Erro ao carregar sugestões:', err);
@@ -94,6 +96,25 @@ function GerenciarAmbulancias() {
 
   const handleSelecionarSugestao = (bairroId) => {
     setFormData({ ...formData, idBairroBase: bairroId.toString() });
+  };
+
+  const handleTipoChange = async (e) => {
+    const novoTipo = e.target.value;
+    setFormData({ ...formData, tipo: novoTipo, idBairroBase: '' });
+    
+    // Se o modal estiver aberto, recarregar sugestões com o novo tipo
+    if (showModal) {
+      setBairrosSugeridos([]);
+      setLoadingSugestoes(true);
+      try {
+        const sugestoes = await analiseEstrategicaService.obterBairrosSugeridos(novoTipo);
+        setBairrosSugeridos(sugestoes.slice(0, 5)); // Top 5 sugestões
+      } catch (err) {
+        console.error('Erro ao carregar sugestões:', err);
+      } finally {
+        setLoadingSugestoes(false);
+      }
+    }
   };
 
   const handleToggleStatus = async (id, ativa) => {
@@ -196,7 +217,7 @@ function GerenciarAmbulancias() {
                 <label>Tipo *</label>
                 <select
                   value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                  onChange={handleTipoChange}
                   required
                 >
                   <option value="BASICA">Básica</option>
@@ -232,8 +253,9 @@ function GerenciarAmbulancias() {
                       paddingLeft: '24px',
                       fontStyle: 'italic'
                     }}>
-                      O algoritmo Dijkstra calcula o menor caminho na rede viária, analisando tempo médio de resposta 
-                      para outros bairros com ocorrências, garantindo posicionamento estratégico otimizado.
+                      Análise estratégica considera: ocorrências relevantes para {formData.tipo === 'UTI' ? 'UTI' : 'Básica'}, 
+                      distância mínima para outras ambulâncias (evita aglomeração), tempo médio de resposta calculado pelo Dijkstra, 
+                      e distribuição geográfica equilibrada para máxima eficiência.
                     </div>
                     {loadingSugestoes ? (
                       <div style={{ color: '#666', fontSize: '0.85rem' }}>Carregando sugestões...</div>

@@ -7,6 +7,7 @@ import com.vitalistech.sosrota.dominio.modelo.Usuario;
 import com.vitalistech.sosrota.dominio.repositorio.BairroRepositorio;
 import com.vitalistech.sosrota.dominio.repositorio.OcorrenciaRepositorio;
 import com.vitalistech.sosrota.dominio.repositorio.UsuarioRepositorio;
+import com.vitalistech.sosrota.dominio.repositorio.AtendimentoRepositorio;
 import com.vitalistech.sosrota.dominio.servico.OcorrenciaServico;
 import com.vitalistech.sosrota.web.dto.AmbulanciaSugeridaDTO;
 import com.vitalistech.sosrota.web.dto.RegistrarOcorrenciaDTO;
@@ -28,15 +29,18 @@ public class OcorrenciaControlador {
     private final BairroRepositorio bairroRepositorio;
     private final OcorrenciaRepositorio ocorrenciaRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
+    private final AtendimentoRepositorio atendimentoRepositorio;
 
     public OcorrenciaControlador(OcorrenciaServico ocorrenciaServico,
                                  BairroRepositorio bairroRepositorio,
                                  OcorrenciaRepositorio ocorrenciaRepositorio,
-                                 UsuarioRepositorio usuarioRepositorio) {
+                                 UsuarioRepositorio usuarioRepositorio,
+                                 AtendimentoRepositorio atendimentoRepositorio) {
         this.ocorrenciaServico = ocorrenciaServico;
         this.bairroRepositorio = bairroRepositorio;
         this.ocorrenciaRepositorio = ocorrenciaRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
+        this.atendimentoRepositorio = atendimentoRepositorio;
     }
 
     @GetMapping
@@ -102,5 +106,47 @@ public class OcorrenciaControlador {
         
         Atendimento atendimento = ocorrenciaServico.despacharOcorrencia(id, usuarioDespacho);
         return ResponseEntity.ok(atendimento);
+    }
+
+    @PostMapping("/{id}/concluir")
+    public ResponseEntity<?> concluir(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        try {
+            Usuario usuarioConclusao = null;
+            if (userId != null) {
+                usuarioConclusao = usuarioRepositorio.findById(userId)
+                        .orElse(null);
+            }
+            
+            Ocorrencia ocorrencia = ocorrenciaServico.concluirOcorrencia(id, usuarioConclusao);
+            return ResponseEntity.ok(ocorrencia);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/atendimentos/{idAtendimento}/chegada")
+    public ResponseEntity<?> registrarChegada(
+            @PathVariable Long idAtendimento,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        try {
+            Usuario usuarioChegada = null;
+            if (userId != null) {
+                usuarioChegada = usuarioRepositorio.findById(userId)
+                        .orElse(null);
+            }
+            
+            Ocorrencia ocorrencia = ocorrenciaServico.registrarChegadaEFechar(idAtendimento, usuarioChegada);
+            return ResponseEntity.ok(ocorrencia);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
     }
 }

@@ -20,6 +20,11 @@ public class RelatorioOcorrenciaDTO {
     private LocalDateTime dataHoraDespacho;
     private String ambulanciaPlaca;
     private Double distanciaKm;
+    private LocalDateTime dataHoraFechamento;
+    private Integer tempoAtendimentoMinutos;
+    private Integer slaMinutos;
+    private Boolean slaCumprido;
+    private Integer tempoExcedidoMinutos;
 
     public RelatorioOcorrenciaDTO() {
     }
@@ -28,7 +33,9 @@ public class RelatorioOcorrenciaDTO {
                                   String gravidade, String status, String bairroNome, String observacoes,
                                   String usuarioRegistroNome, String usuarioRegistroLogin,
                                   String usuarioDespachoNome, String usuarioDespachoLogin,
-                                  LocalDateTime dataHoraDespacho, String ambulanciaPlaca, Double distanciaKm) {
+                                  LocalDateTime dataHoraDespacho, String ambulanciaPlaca, Double distanciaKm,
+                                  LocalDateTime dataHoraFechamento, Integer tempoAtendimentoMinutos,
+                                  Integer slaMinutos, Boolean slaCumprido, Integer tempoExcedidoMinutos) {
         this.id = id;
         this.dataHoraAbertura = dataHoraAbertura;
         this.tipoOcorrencia = tipoOcorrencia;
@@ -43,6 +50,11 @@ public class RelatorioOcorrenciaDTO {
         this.dataHoraDespacho = dataHoraDespacho;
         this.ambulanciaPlaca = ambulanciaPlaca;
         this.distanciaKm = distanciaKm;
+        this.dataHoraFechamento = dataHoraFechamento;
+        this.tempoAtendimentoMinutos = tempoAtendimentoMinutos;
+        this.slaMinutos = slaMinutos;
+        this.slaCumprido = slaCumprido;
+        this.tempoExcedidoMinutos = tempoExcedidoMinutos;
     }
 
     // Getters e Setters
@@ -87,5 +99,20 @@ public class RelatorioOcorrenciaDTO {
 
     public Double getDistanciaKm() { return distanciaKm; }
     public void setDistanciaKm(Double distanciaKm) { this.distanciaKm = distanciaKm; }
+
+    public LocalDateTime getDataHoraFechamento() { return dataHoraFechamento; }
+    public void setDataHoraFechamento(LocalDateTime dataHoraFechamento) { this.dataHoraFechamento = dataHoraFechamento; }
+
+    public Integer getTempoAtendimentoMinutos() { return tempoAtendimentoMinutos; }
+    public void setTempoAtendimentoMinutos(Integer tempoAtendimentoMinutos) { this.tempoAtendimentoMinutos = tempoAtendimentoMinutos; }
+
+    public Integer getSlaMinutos() { return slaMinutos; }
+    public void setSlaMinutos(Integer slaMinutos) { this.slaMinutos = slaMinutos; }
+
+    public Boolean getSlaCumprido() { return slaCumprido; }
+    public void setSlaCumprido(Boolean slaCumprido) { this.slaCumprido = slaCumprido; }
+
+    public Integer getTempoExcedidoMinutos() { return tempoExcedidoMinutos; }
+    public void setTempoExcedidoMinutos(Integer tempoExcedidoMinutos) { this.tempoExcedidoMinutos = tempoExcedidoMinutos; }
 }
 

@@ -71,7 +71,7 @@ function AnaliseEstrategica() {
                 <th>Prioridade</th>
                 <th>Bairro</th>
                 <th>Justificativa</th>
-                <th>Alcance (Conexões)</th>
+                <th>Conexões Diretas</th>
                 <th>Ocorrências</th>
                 <th>Tempo Médio Resposta</th>
                 <th>Ambulâncias Existentes</th>
@@ -114,16 +114,16 @@ function AnaliseEstrategica() {
                             alignItems: 'center',
                             gap: '4px',
                             padding: '4px 8px',
-                            backgroundColor: bairro.bairrosAlcancaveis >= 10 ? '#d1fae5' : '#fef3c7',
+                            backgroundColor: bairro.bairrosAlcancaveis >= 5 ? '#d1fae5' : bairro.bairrosAlcancaveis >= 3 ? '#fef3c7' : '#fee2e2',
                             borderRadius: '6px',
                             fontSize: '0.875rem',
                             fontWeight: '600',
-                            color: bairro.bairrosAlcancaveis >= 10 ? '#065f46' : '#92400e'
+                            color: bairro.bairrosAlcancaveis >= 5 ? '#065f46' : bairro.bairrosAlcancaveis >= 3 ? '#92400e' : '#991b1b'
                           }}>
-                            🔗 {bairro.bairrosAlcancaveis} bairro(s)
+                            🔗 {bairro.bairrosAlcancaveis} conexão(ões)
                           </span>
                         ) : (
-                          <span style={{ color: '#9ca3af' }}>-</span>
+                          <span style={{ color: '#9ca3af' }}>0 conexões</span>
                         )}
                       </td>
                       <td>
