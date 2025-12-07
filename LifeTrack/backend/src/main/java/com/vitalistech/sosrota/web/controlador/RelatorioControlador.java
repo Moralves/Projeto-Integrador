@@ -41,6 +41,13 @@ public class RelatorioControlador {
             dto.setBairroNome(ocorrencia.getBairroLocal() != null ? ocorrencia.getBairroLocal().getNome() : null);
             dto.setObservacoes(ocorrencia.getObservacoes());
             
+            // Informações de SLA e tempo de atendimento
+            dto.setDataHoraFechamento(ocorrencia.getDataHoraFechamento());
+            dto.setTempoAtendimentoMinutos(ocorrencia.getTempoAtendimentoMinutos());
+            dto.setSlaMinutos(ocorrencia.getSlaMinutos());
+            dto.setSlaCumprido(ocorrencia.getSlaCumprido());
+            dto.setTempoExcedidoMinutos(ocorrencia.getTempoExcedidoMinutos());
+            
             // Informações do usuário que registrou
             if (ocorrencia.getUsuarioRegistro() != null) {
                 dto.setUsuarioRegistroNome(ocorrencia.getUsuarioRegistro().getNome() != null 

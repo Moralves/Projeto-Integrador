@@ -3,6 +3,7 @@ import GerenciarUsuarios from './sections/GerenciarUsuarios';
 import GerenciarEquipes from './sections/GerenciarEquipes';
 import GerenciarFuncionarios from './sections/GerenciarFuncionarios';
 import GerenciarAmbulancias from './sections/GerenciarAmbulancias';
+import AnaliseEstrategica from './sections/AnaliseEstrategica';
 import Relatorios from './sections/Relatorios';
 import './AdminLayout.css';
 
@@ -14,7 +15,8 @@ function AdminLayout({ onLogout }) {
     { id: 'equipes', label: 'Equipes', icon: '👨‍👩‍👧‍👦' },
     { id: 'funcionarios', label: 'Funcionários', icon: '👤' },
     { id: 'ambulancias', label: 'Ambulâncias', icon: '🚑' },
-    { id: 'relatorios', label: 'Relatórios', icon: '📊' },
+    { id: 'analise', label: 'Análise Estratégica', icon: '📊' },
+    { id: 'relatorios', label: 'Relatórios', icon: '📈' },
   ];
 
   const handleLogout = () => {
@@ -35,6 +37,8 @@ function AdminLayout({ onLogout }) {
         return <GerenciarFuncionarios />;
       case 'ambulancias':
         return <GerenciarAmbulancias />;
+      case 'analise':
+        return <AnaliseEstrategica />;
       case 'relatorios':
         return <Relatorios />;
       default:

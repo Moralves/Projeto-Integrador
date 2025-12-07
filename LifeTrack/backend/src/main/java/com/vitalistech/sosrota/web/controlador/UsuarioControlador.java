@@ -31,7 +31,7 @@ public class UsuarioControlador {
     @GetMapping
     public List<UsuarioDTO> listar() {
         return usuarioRepositorio.findAll().stream()
-                .map(u -> new UsuarioDTO(u.getId(), u.getLogin(), u.getNome(), u.getEmail(), u.getPerfil(), u.isAtivo()))
+                .map(u -> new UsuarioDTO(u.getId(), u.getLogin(), u.getNome(), u.getEmail(), u.getTelefone(), u.getPerfil(), u.isAtivo()))
                 .collect(Collectors.toList());
     }
 
@@ -55,9 +55,10 @@ public class UsuarioControlador {
         // Admin só pode criar usuários comuns (USER), nunca ADMIN
         usuario.setPerfil("USER");
         
-        // Definir nome e email
+        // Definir nome, email e telefone
         usuario.setNome(dto.getNome() != null && !dto.getNome().isEmpty() ? dto.getNome() : dto.getUsername());
         usuario.setEmail(dto.getEmail() != null && !dto.getEmail().isEmpty() ? dto.getEmail() : dto.getUsername() + "@sistema.local");
+        usuario.setTelefone(dto.getTelefone());
         usuario.setAtivo(true);
 
         Usuario usuarioSalvo = usuarioRepositorio.save(usuario);
@@ -66,6 +67,7 @@ public class UsuarioControlador {
                 usuarioSalvo.getLogin(), 
                 usuarioSalvo.getNome(), 
                 usuarioSalvo.getEmail(), 
+                usuarioSalvo.getTelefone(), 
                 usuarioSalvo.getPerfil(), 
                 usuarioSalvo.isAtivo()
         );
@@ -101,12 +103,15 @@ public class UsuarioControlador {
         // Admin não pode alterar perfil para ADMIN (sempre mantém como USER)
         // Não atualizamos o perfil aqui para garantir que não seja alterado para ADMIN
 
-        // Atualizar nome e email
+        // Atualizar nome, email e telefone
         if (dto.getNome() != null && !dto.getNome().isEmpty()) {
             usuario.setNome(dto.getNome());
         }
         if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
             usuario.setEmail(dto.getEmail());
+        }
+        if (dto.getTelefone() != null && !dto.getTelefone().isEmpty()) {
+            usuario.setTelefone(dto.getTelefone());
         }
 
         Usuario usuarioSalvo = usuarioRepositorio.save(usuario);
@@ -115,6 +120,7 @@ public class UsuarioControlador {
                 usuarioSalvo.getLogin(), 
                 usuarioSalvo.getNome(), 
                 usuarioSalvo.getEmail(), 
+                usuarioSalvo.getTelefone(), 
                 usuarioSalvo.getPerfil(), 
                 usuarioSalvo.isAtivo()
         );
@@ -151,6 +157,7 @@ public class UsuarioControlador {
                 usuarioSalvo.getLogin(), 
                 usuarioSalvo.getNome(), 
                 usuarioSalvo.getEmail(), 
+                usuarioSalvo.getTelefone(), 
                 usuarioSalvo.getPerfil(), 
                 usuarioSalvo.isAtivo()
         );

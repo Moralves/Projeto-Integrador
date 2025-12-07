@@ -16,7 +16,7 @@ public class Ocorrencia {
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "id_bairro_local")
+    @JoinColumn(name = "id_bairro_origem")
     private Bairro bairroLocal;
 
     @Column(nullable = false)
@@ -26,19 +26,37 @@ public class Ocorrencia {
     @Column(nullable = false)
     private Gravidade gravidade;
 
-    @Column(nullable = false)
+    @Column(name = "data_hora_abertura", nullable = false)
     private LocalDateTime dataHoraAbertura;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, name = "status")
     private StatusOcorrencia status;
 
     @Column(length = 1000)
     private String observacoes;
 
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String descricao;
+
     @ManyToOne
     @JoinColumn(name = "id_usuario_registro")
     private Usuario usuarioRegistro;
+
+    @Column(name = "data_hora_fechamento")
+    private LocalDateTime dataHoraFechamento;
+
+    @Column(name = "tempo_atendimento_minutos")
+    private Integer tempoAtendimentoMinutos;
+
+    @Column(name = "sla_minutos")
+    private Integer slaMinutos;
+
+    @Column(name = "sla_cumprido")
+    private Boolean slaCumprido;
+
+    @Column(name = "tempo_excedido_minutos")
+    private Integer tempoExcedidoMinutos;
 
     public Long getId() {
         return id;
@@ -96,11 +114,59 @@ public class Ocorrencia {
         this.observacoes = observacoes;
     }
 
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
     public Usuario getUsuarioRegistro() {
         return usuarioRegistro;
     }
 
     public void setUsuarioRegistro(Usuario usuarioRegistro) {
         this.usuarioRegistro = usuarioRegistro;
+    }
+
+    public LocalDateTime getDataHoraFechamento() {
+        return dataHoraFechamento;
+    }
+
+    public void setDataHoraFechamento(LocalDateTime dataHoraFechamento) {
+        this.dataHoraFechamento = dataHoraFechamento;
+    }
+
+    public Integer getTempoAtendimentoMinutos() {
+        return tempoAtendimentoMinutos;
+    }
+
+    public void setTempoAtendimentoMinutos(Integer tempoAtendimentoMinutos) {
+        this.tempoAtendimentoMinutos = tempoAtendimentoMinutos;
+    }
+
+    public Integer getSlaMinutos() {
+        return slaMinutos;
+    }
+
+    public void setSlaMinutos(Integer slaMinutos) {
+        this.slaMinutos = slaMinutos;
+    }
+
+    public Boolean getSlaCumprido() {
+        return slaCumprido;
+    }
+
+    public void setSlaCumprido(Boolean slaCumprido) {
+        this.slaCumprido = slaCumprido;
+    }
+
+    public Integer getTempoExcedidoMinutos() {
+        return tempoExcedidoMinutos;
+    }
+
+    public void setTempoExcedidoMinutos(Integer tempoExcedidoMinutos) {
+        this.tempoExcedidoMinutos = tempoExcedidoMinutos;
     }
 }

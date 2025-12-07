@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS bairros (
 );
 
 -- Tabela de ruas/conexões (arestas do grafo)
-CREATE TABLE IF NOT EXISTS rua_conexoes (
+CREATE TABLE IF NOT EXISTS ruas_conexoes (
     id BIGSERIAL PRIMARY KEY,
     id_bairro_origem BIGINT NOT NULL,
     id_bairro_destino BIGINT NOT NULL,
@@ -66,27 +66,33 @@ CREATE TABLE IF NOT EXISTS equipe_profissional (
 CREATE TABLE IF NOT EXISTS ocorrencias (
     id BIGSERIAL PRIMARY KEY,
     descricao TEXT NOT NULL,
+    tipo_ocorrencia VARCHAR(255) NOT NULL,
     gravidade VARCHAR(20) NOT NULL CHECK (gravidade IN ('BAIXA', 'MEDIA', 'ALTA', 'CRITICA')),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('PENDENTE', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA')),
+    status VARCHAR(20) NOT NULL CHECK (status IN ('ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA')),
     id_bairro_origem BIGINT NOT NULL,
     id_bairro_destino BIGINT,
     id_equipe_atribuida BIGINT,
-    data_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_hora_abertura TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    observacoes VARCHAR(1000),
+    id_usuario_registro BIGINT,
     FOREIGN KEY (id_bairro_origem) REFERENCES bairros(id),
     FOREIGN KEY (id_bairro_destino) REFERENCES bairros(id),
-    FOREIGN KEY (id_equipe_atribuida) REFERENCES equipes(id)
+    FOREIGN KEY (id_equipe_atribuida) REFERENCES equipes(id),
+    FOREIGN KEY (id_usuario_registro) REFERENCES usuarios(id)
 );
 
 -- Tabela de atendimentos
 CREATE TABLE IF NOT EXISTS atendimentos (
     id BIGSERIAL PRIMARY KEY,
     id_ocorrencia BIGINT NOT NULL,
-    id_equipe BIGINT NOT NULL,
-    data_inicio TIMESTAMP,
-    data_fim TIMESTAMP,
-    observacoes TEXT,
+    id_ambulancia BIGINT NOT NULL,
+    data_hora_despacho TIMESTAMP,
+    data_hora_chegada TIMESTAMP,
+    distancia_km DECIMAL(10, 2),
+    id_usuario_despacho BIGINT,
     FOREIGN KEY (id_ocorrencia) REFERENCES ocorrencias(id),
-    FOREIGN KEY (id_equipe) REFERENCES equipes(id)
+    FOREIGN KEY (id_ambulancia) REFERENCES ambulancias(id),
+    FOREIGN KEY (id_usuario_despacho) REFERENCES usuarios(id)
 );
 
 -- Tabela de usuários (para futura autenticação)
@@ -100,6 +106,30 @@ CREATE TABLE IF NOT EXISTS usuarios (
     ativo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- Tabela de histórico de ocorrências
+-- Registra todas as ações relacionadas a ocorrências para auditoria
+CREATE TABLE IF NOT EXISTS historico_ocorrencias (
+    id BIGSERIAL PRIMARY KEY,
+    id_ocorrencia BIGINT NOT NULL,
+    id_usuario BIGINT NOT NULL,
+    acao VARCHAR(50) NOT NULL CHECK (acao IN ('ABERTURA', 'DESPACHO', 'ALTERACAO_STATUS', 'CANCELAMENTO', 'CONCLUSAO')),
+    status_anterior VARCHAR(20),
+    status_novo VARCHAR(20) NOT NULL,
+    descricao_acao TEXT,
+    data_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Informações da ocorrência no momento da ação (para histórico completo)
+    tipo_ocorrencia VARCHAR(255),
+    gravidade VARCHAR(20),
+    bairro_origem_nome VARCHAR(255),
+    observacoes VARCHAR(1000),
+    -- Informações do usuário que realizou a ação
+    usuario_nome VARCHAR(255),
+    usuario_login VARCHAR(100),
+    usuario_perfil VARCHAR(50),
+    FOREIGN KEY (id_ocorrencia) REFERENCES ocorrencias(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+);
+
 -- Índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_ambulancias_bairro ON ambulancias(id_bairro_base);
 CREATE INDEX IF NOT EXISTS idx_equipes_ambulancia ON equipes(id_ambulancia);
@@ -107,6 +137,10 @@ CREATE INDEX IF NOT EXISTS idx_equipe_profissional_equipe ON equipe_profissional
 CREATE INDEX IF NOT EXISTS idx_equipe_profissional_profissional ON equipe_profissional(id_profissional);
 CREATE INDEX IF NOT EXISTS idx_ocorrencias_bairro_origem ON ocorrencias(id_bairro_origem);
 CREATE INDEX IF NOT EXISTS idx_ocorrencias_equipe ON ocorrencias(id_equipe_atribuida);
+CREATE INDEX IF NOT EXISTS idx_historico_ocorrencia_id_ocorrencia ON historico_ocorrencias(id_ocorrencia);
+CREATE INDEX IF NOT EXISTS idx_historico_ocorrencia_id_usuario ON historico_ocorrencias(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_historico_ocorrencia_data_hora ON historico_ocorrencias(data_hora DESC);
+CREATE INDEX IF NOT EXISTS idx_historico_ocorrencia_acao ON historico_ocorrencias(acao);
 
 -- Dados iniciais de exemplo (opcional)
 -- INSERT INTO bairros (nome) VALUES 

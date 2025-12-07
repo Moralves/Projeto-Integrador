@@ -34,8 +34,31 @@ export const ocorrenciaService = {
     });
     
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || 'Erro ao registrar ocorrência');
+      let errorMessage = 'Erro ao registrar ocorrência';
+      try {
+        // Tentar ler como JSON primeiro
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        } else {
+          // Se não for JSON, ler como texto
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+      } catch (err) {
+        // Se falhar ao ler, usar mensagem padrão
+        errorMessage = `Erro ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
     return response.json();
   },
@@ -56,8 +79,22 @@ export const ocorrenciaService = {
     });
     
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || 'Erro ao despachar ocorrência');
+      let errorMessage = 'Erro ao despachar ocorrência';
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } else {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+      } catch (err) {
+        errorMessage = `Erro ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
     return response.json();
   },
@@ -65,6 +102,89 @@ export const ocorrenciaService = {
   async buscarPorId(id) {
     const response = await fetch(`${API_URL}/ocorrencias/${id}`);
     if (!response.ok) throw new Error('Erro ao buscar ocorrência');
+    return response.json();
+  },
+
+  async sugerirAmbulancias(idOcorrencia) {
+    const response = await fetch(`${API_URL}/ocorrencias/${idOcorrencia}/ambulancias-sugeridas`);
+    if (!response.ok) {
+      let errorMessage = 'Erro ao buscar ambulâncias sugeridas';
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } else {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+      } catch (err) {
+        errorMessage = `Erro ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    return response.json();
+  },
+
+  async obterTimer(idOcorrencia) {
+    const response = await fetch(`${API_URL}/ocorrencias/${idOcorrencia}/timer`);
+    if (!response.ok) {
+      let errorMessage = 'Erro ao obter timer';
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } else {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+      } catch (err) {
+        errorMessage = `Erro ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    return response.json();
+  },
+
+  async registrarRetorno(idAtendimento) {
+    const userId = getUserId();
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (userId) {
+      headers['X-User-Id'] = userId.toString();
+    }
+    
+    const response = await fetch(`${API_URL}/ocorrencias/atendimentos/${idAtendimento}/retorno`, {
+      method: 'POST',
+      headers,
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Erro ao registrar retorno';
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } else {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+      } catch (err) {
+        errorMessage = `Erro ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
     return response.json();
   },
 };

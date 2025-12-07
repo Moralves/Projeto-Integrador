@@ -1,6 +1,7 @@
 package com.vitalistech.sosrota.dominio.modelo;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * Representa um profissional de saúde (médico, enfermeiro, condutor).
@@ -20,7 +21,17 @@ public class Profissional {
     @Column(nullable = false)
     private FuncaoProfissional funcao;
 
+    @NotBlank(message = "Contato é obrigatório")
+    @Column(nullable = false)
     private String contato;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Turno turno;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusProfissional status = StatusProfissional.DISPONIVEL;
 
     @Column(nullable = false)
     private boolean ativo = true;
@@ -63,5 +74,21 @@ public class Profissional {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public Turno getTurno() {
+        return turno;
+    }
+
+    public void setTurno(Turno turno) {
+        this.turno = turno;
+    }
+
+    public StatusProfissional getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusProfissional status) {
+        this.status = status;
     }
 }

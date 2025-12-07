@@ -1,8 +1,11 @@
 package com.vitalistech.sosrota.web.controlador;
 
 import com.vitalistech.sosrota.dominio.modelo.Ambulancia;
+import com.vitalistech.sosrota.dominio.modelo.Bairro;
 import com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia;
 import com.vitalistech.sosrota.dominio.repositorio.AmbulanciaRepositorio;
+import com.vitalistech.sosrota.dominio.repositorio.BairroRepositorio;
+import com.vitalistech.sosrota.web.dto.CriarAmbulanciaDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +21,12 @@ import java.util.List;
 public class AmbulanciaControlador {
 
     private final AmbulanciaRepositorio ambulanciaRepositorio;
+    private final BairroRepositorio bairroRepositorio;
 
-    public AmbulanciaControlador(AmbulanciaRepositorio ambulanciaRepositorio) {
+    public AmbulanciaControlador(AmbulanciaRepositorio ambulanciaRepositorio,
+                                 BairroRepositorio bairroRepositorio) {
         this.ambulanciaRepositorio = ambulanciaRepositorio;
+        this.bairroRepositorio = bairroRepositorio;
     }
 
     @GetMapping
@@ -29,9 +35,17 @@ public class AmbulanciaControlador {
     }
 
     @PostMapping
-    public ResponseEntity<Ambulancia> cadastrar(@RequestBody @Valid Ambulancia ambulancia) {
+    public ResponseEntity<Ambulancia> cadastrar(@RequestBody @Valid CriarAmbulanciaDTO dto) {
+        Bairro bairroBase = bairroRepositorio.findById(dto.getIdBairroBase())
+                .orElseThrow(() -> new IllegalArgumentException("Bairro não encontrado"));
+
+        Ambulancia ambulancia = new Ambulancia();
+        ambulancia.setPlaca(dto.getPlaca());
+        ambulancia.setTipo(dto.getTipo());
+        ambulancia.setBairroBase(bairroBase);
         ambulancia.setStatus(StatusAmbulancia.DISPONIVEL);
         ambulancia.setAtiva(true);
+
         return ResponseEntity.ok(ambulanciaRepositorio.save(ambulancia));
     }
 

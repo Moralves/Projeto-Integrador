@@ -1,21 +1,37 @@
 import { useState, useEffect } from 'react';
 import { ambulanciaService } from '../../../services/ambulanciaService';
+import { bairroService } from '../../../services/bairroService';
+import { analiseEstrategicaService } from '../../../services/analiseEstrategicaService';
+import AutocompleteSelect from '../../../components/AutocompleteSelect';
 import '../AdminDashboard.css';
 
 function GerenciarAmbulancias() {
   const [ambulancias, setAmbulancias] = useState([]);
+  const [bairros, setBairros] = useState([]);
+  const [bairrosSugeridos, setBairrosSugeridos] = useState([]);
+  const [loadingSugestoes, setLoadingSugestoes] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     placa: '',
     tipo: 'BASICA',
-    idBairroBase: null,
+    idBairroBase: '',
   });
 
   useEffect(() => {
     carregarAmbulancias();
+    carregarBairros();
   }, []);
+
+  const carregarBairros = async () => {
+    try {
+      const dados = await bairroService.listar();
+      setBairros(dados);
+    } catch (err) {
+      console.error('Erro ao carregar bairros:', err);
+    }
+  };
 
   const carregarAmbulancias = async () => {
     try {
@@ -34,7 +50,20 @@ function GerenciarAmbulancias() {
     e.preventDefault();
     try {
       setError('');
-      await ambulanciaService.cadastrar(formData);
+      
+      // Validar se bairro foi selecionado
+      if (!formData.idBairroBase || formData.idBairroBase === '') {
+        setError('Selecione um bairro base');
+        return;
+      }
+
+      const dadosEnvio = {
+        placa: formData.placa.trim(),
+        tipo: formData.tipo,
+        idBairroBase: parseInt(formData.idBairroBase)
+      };
+
+      await ambulanciaService.cadastrar(dadosEnvio);
       handleCloseModal();
       carregarAmbulancias();
     } catch (err) {
@@ -42,9 +71,50 @@ function GerenciarAmbulancias() {
     }
   };
 
+  const handleOpenModal = async () => {
+    setShowModal(true);
+    setBairrosSugeridos([]);
+    setLoadingSugestoes(true);
+    try {
+      // Passar o tipo de ambulância selecionado para análise estratégica
+      const tipoAmbulancia = formData.tipo || null;
+      const sugestoes = await analiseEstrategicaService.obterBairrosSugeridos(tipoAmbulancia);
+      setBairrosSugeridos(sugestoes.slice(0, 5)); // Top 5 sugestões
+    } catch (err) {
+      console.error('Erro ao carregar sugestões:', err);
+      // Não mostrar erro, apenas não exibir sugestões
+    } finally {
+      setLoadingSugestoes(false);
+    }
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
-    setFormData({ placa: '', tipo: 'BASICA', idBairroBase: null });
+    setFormData({ placa: '', tipo: 'BASICA', idBairroBase: '' });
+    setBairrosSugeridos([]);
+  };
+
+  const handleSelecionarSugestao = (bairroId) => {
+    setFormData({ ...formData, idBairroBase: bairroId.toString() });
+  };
+
+  const handleTipoChange = async (e) => {
+    const novoTipo = e.target.value;
+    setFormData({ ...formData, tipo: novoTipo, idBairroBase: '' });
+    
+    // Se o modal estiver aberto, recarregar sugestões com o novo tipo
+    if (showModal) {
+      setBairrosSugeridos([]);
+      setLoadingSugestoes(true);
+      try {
+        const sugestoes = await analiseEstrategicaService.obterBairrosSugeridos(novoTipo);
+        setBairrosSugeridos(sugestoes.slice(0, 5)); // Top 5 sugestões
+      } catch (err) {
+        console.error('Erro ao carregar sugestões:', err);
+      } finally {
+        setLoadingSugestoes(false);
+      }
+    }
   };
 
   const handleToggleStatus = async (id, ativa) => {
@@ -64,7 +134,7 @@ function GerenciarAmbulancias() {
     <div className="admin-dashboard">
       <div className="dashboard-header">
         <h1>Gerenciamento de Ambulâncias</h1>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn-primary" onClick={handleOpenModal}>
           + Nova Ambulância
         </button>
       </div>
@@ -147,7 +217,7 @@ function GerenciarAmbulancias() {
                 <label>Tipo *</label>
                 <select
                   value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                  onChange={handleTipoChange}
                   required
                 >
                   <option value="BASICA">Básica</option>
@@ -155,16 +225,130 @@ function GerenciarAmbulancias() {
                 </select>
               </div>
               <div className="form-group">
-                <label>ID Bairro Base *</label>
-                <input
-                  type="number"
-                  value={formData.idBairroBase || ''}
-                  onChange={(e) => setFormData({ ...formData, idBairroBase: parseInt(e.target.value) })}
-                  required
-                  placeholder="1"
+                <label>Bairro Base *</label>
+                {bairrosSugeridos.length > 0 && (
+                  <div style={{ 
+                    marginBottom: '12px', 
+                    padding: '12px', 
+                    backgroundColor: '#f0f7ff', 
+                    borderRadius: '6px',
+                    border: '1px solid #4a90e2'
+                  }}>
+                    <div style={{ 
+                      fontSize: '0.9rem', 
+                      fontWeight: '600', 
+                      color: '#2c5aa0',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <span>💡</span>
+                      <span>Sugestões baseadas no algoritmo Dijkstra e análise de ocorrências:</span>
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      color: '#4b5563',
+                      marginBottom: '8px',
+                      paddingLeft: '24px',
+                      fontStyle: 'italic'
+                    }}>
+                      Análise estratégica considera: ocorrências relevantes para {formData.tipo === 'UTI' ? 'UTI' : 'Básica'}, 
+                      distância mínima para outras ambulâncias (evita aglomeração), tempo médio de resposta calculado pelo Dijkstra, 
+                      e distribuição geográfica equilibrada para máxima eficiência.
+                    </div>
+                    {loadingSugestoes ? (
+                      <div style={{ color: '#666', fontSize: '0.85rem' }}>Carregando sugestões...</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {bairrosSugeridos.map((sugestao, idx) => (
+                          <button
+                            key={sugestao.id}
+                            type="button"
+                            onClick={() => handleSelecionarSugestao(sugestao.id)}
+                            style={{
+                              textAlign: 'left',
+                              padding: '8px 12px',
+                              backgroundColor: formData.idBairroBase === sugestao.id.toString() ? '#4a90e2' : '#fff',
+                              color: formData.idBairroBase === sugestao.id.toString() ? '#fff' : '#333',
+                              border: `1px solid ${formData.idBairroBase === sugestao.id.toString() ? '#4a90e2' : '#ddd'}`,
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '0.85rem',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (formData.idBairroBase !== sugestao.id.toString()) {
+                                e.target.style.backgroundColor = '#e8f4fd';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (formData.idBairroBase !== sugestao.id.toString()) {
+                                e.target.style.backgroundColor = '#fff';
+                              }
+                            }}
+                          >
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '600' }}>
+                                {idx + 1}. {sugestao.nome}
+                              </div>
+                              <div style={{ 
+                                fontSize: '0.75rem', 
+                                opacity: 0.8,
+                                marginTop: '2px'
+                              }}>
+                                {sugestao.justificativa}
+                              </div>
+                              <div style={{ 
+                                fontSize: '0.7rem', 
+                                marginTop: '4px',
+                                display: 'flex',
+                                gap: '12px',
+                                opacity: 0.7,
+                                flexWrap: 'wrap'
+                              }}>
+                                {sugestao.bairrosAlcancaveis !== undefined && sugestao.bairrosAlcancaveis > 0 && (
+                                  <span style={{ 
+                                    fontWeight: '600', 
+                                    color: sugestao.bairrosAlcancaveis >= 10 ? '#059669' : '#6b7280'
+                                  }}>
+                                    🔗 {sugestao.bairrosAlcancaveis} bairro(s) alcançável(is) via Dijkstra
+                                  </span>
+                                )}
+                                {sugestao.ocorrenciasNoBairro > 0 && (
+                                  <span>📊 {sugestao.ocorrenciasNoBairro} ocorrência(s)</span>
+                                )}
+                                {sugestao.tempoMedioResposta > 0 && (
+                                  <span>⏱️ {sugestao.tempoMedioResposta.toFixed(1)} min médio</span>
+                                )}
+                                {sugestao.ambulanciasExistentes > 0 && (
+                                  <span>🚑 {sugestao.ambulanciasExistentes} ambulância(s)</span>
+                                )}
+                              </div>
+                            </div>
+                            {formData.idBairroBase === sugestao.id.toString() && (
+                              <span style={{ marginLeft: '8px', fontSize: '1.2rem' }}>✓</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <AutocompleteSelect
+                  options={bairros}
+                  value={formData.idBairroBase}
+                  onChange={(value) => setFormData({ ...formData, idBairroBase: value })}
+                  placeholder="Digite ou selecione o bairro base..."
+                  getOptionLabel={(opt) => opt.nome}
+                  getOptionValue={(opt) => opt.id.toString()}
+                  required={true}
                 />
-                <small style={{ color: '#666', fontSize: '0.85rem' }}>
-                  Nota: Você precisa criar bairros primeiro no banco de dados
+                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                  Bairro onde a ambulância está estacionada (ponto de partida)
                 </small>
               </div>
               {error && <div className="form-error">{error}</div>}
