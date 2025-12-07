@@ -74,6 +74,12 @@ public class ProfissionalControlador {
         Profissional p = profissionalRepositorio.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
 
+        // Não permitir editar funcionário que está em atendimento
+        if (p.getStatus() == StatusProfissional.EM_ATENDIMENTO) {
+            throw new IllegalStateException(
+                "Não é possível editar funcionário que está em atendimento. Finalize o atendimento antes de editar.");
+        }
+
         // Validar se pode alterar status
         if (dto.getStatus() == StatusProfissional.DISPONIVEL && 
             p.getStatus() == StatusProfissional.EM_ATENDIMENTO) {

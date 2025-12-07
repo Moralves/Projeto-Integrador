@@ -28,6 +28,9 @@ public class Usuario {
     @Column
     private String email;
 
+    @Column
+    private String telefone;
+
     @Column(nullable = false)
     private boolean ativo = true;
 
@@ -77,6 +80,14 @@ public class Usuario {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
     }
 
     public boolean isAtivo() {

@@ -99,12 +99,14 @@ CREATE TABLE IF NOT EXISTS atendimentos (
     id BIGSERIAL PRIMARY KEY,
     id_ocorrencia BIGINT NOT NULL,
     id_ambulancia BIGINT NOT NULL,
+    id_equipe BIGINT NOT NULL,
     data_hora_despacho TIMESTAMP,
     data_hora_chegada TIMESTAMP,
     distancia_km DECIMAL(10, 2),
     id_usuario_despacho BIGINT,
     FOREIGN KEY (id_ocorrencia) REFERENCES ocorrencias(id),
     FOREIGN KEY (id_ambulancia) REFERENCES ambulancias(id),
+    FOREIGN KEY (id_equipe) REFERENCES equipes(id),
     FOREIGN KEY (id_usuario_despacho) REFERENCES usuarios(id)
 );
 
@@ -165,32 +167,26 @@ END $$;
 -- SEMPRE recriar a constraint correta (sem verificação - sempre remove e recria)
 DO $$
 BEGIN
-    -- Tentar adicionar a constraint
-    BEGIN
-        ALTER TABLE ocorrencias 
-            ADD CONSTRAINT ocorrencias_status_check 
-            CHECK (status IN ('ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA'));
-    EXCEPTION WHEN duplicate_object THEN
-        -- Se já existe, remover e recriar
-        BEGIN
-            ALTER TABLE ocorrencias DROP CONSTRAINT IF EXISTS ocorrencias_status_check CASCADE;
-            ALTER TABLE ocorrencias 
-                ADD CONSTRAINT ocorrencias_status_check 
-                CHECK (status IN ('ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA'));
-        EXCEPTION WHEN OTHERS THEN
-            -- Última tentativa sem CASCADE
-            BEGIN
-                ALTER TABLE ocorrencias DROP CONSTRAINT IF EXISTS ocorrencias_status_check;
-                ALTER TABLE ocorrencias 
-                    ADD CONSTRAINT ocorrencias_status_check 
-                    CHECK (status IN ('ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA'));
-            EXCEPTION WHEN OTHERS THEN
-                NULL;
-            END;
-        END;
-    EXCEPTION WHEN OTHERS THEN
-        NULL;
-    END;
+    -- Primeiro, remover a constraint se existir (sem erro se não existir)
+    ALTER TABLE ocorrencias DROP CONSTRAINT IF EXISTS ocorrencias_status_check CASCADE;
+EXCEPTION WHEN OTHERS THEN
+    NULL;
+END $$;
+
+-- Criar a constraint correta em um bloco separado
+DO $$
+BEGIN
+    ALTER TABLE ocorrencias 
+        ADD CONSTRAINT ocorrencias_status_check 
+        CHECK (status IN ('ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA'));
+EXCEPTION WHEN duplicate_object THEN
+    -- Se ainda existe, remover e recriar
+    ALTER TABLE ocorrencias DROP CONSTRAINT IF EXISTS ocorrencias_status_check CASCADE;
+    ALTER TABLE ocorrencias 
+        ADD CONSTRAINT ocorrencias_status_check 
+        CHECK (status IN ('ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA', 'CANCELADA'));
+EXCEPTION WHEN OTHERS THEN
+    NULL;
 END $$;
 
 -- ============================================================================
@@ -387,6 +383,87 @@ BEGIN
     END IF;
 END $$;
 
+-- Adicionar coluna id_equipe em atendimentos (se não existir)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'atendimentos' 
+        AND column_name = 'id_equipe'
+    ) THEN
+        ALTER TABLE atendimentos 
+            ADD COLUMN id_equipe BIGINT;
+        
+        -- Preencher com a equipe da ambulância se houver atendimentos existentes
+        UPDATE atendimentos a
+        SET id_equipe = (
+            SELECT e.id
+            FROM equipes e
+            WHERE e.id_ambulancia = a.id_ambulancia
+            AND e.ativa = true
+            LIMIT 1
+        )
+        WHERE a.id_equipe IS NULL;
+        
+        -- Tornar NOT NULL após preencher
+        BEGIN
+            ALTER TABLE atendimentos 
+                ALTER COLUMN id_equipe SET NOT NULL;
+        EXCEPTION WHEN OTHERS THEN
+            NULL;
+        END;
+        
+        -- Adicionar constraint FK
+        BEGIN
+            ALTER TABLE atendimentos 
+                ADD CONSTRAINT fk_atendimento_equipe 
+                FOREIGN KEY (id_equipe) REFERENCES equipes(id);
+        EXCEPTION WHEN duplicate_object THEN
+            NULL;
+        END;
+    ELSE
+        -- Garantir que é NOT NULL
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'atendimentos' 
+            AND column_name = 'id_equipe'
+            AND is_nullable = 'YES'
+        ) THEN
+            UPDATE atendimentos a
+            SET id_equipe = (
+                SELECT e.id
+                FROM equipes e
+                WHERE e.id_ambulancia = a.id_ambulancia
+                AND e.ativa = true
+                LIMIT 1
+            )
+            WHERE a.id_equipe IS NULL;
+            
+            BEGIN
+                ALTER TABLE atendimentos 
+                    ALTER COLUMN id_equipe SET NOT NULL;
+            EXCEPTION WHEN OTHERS THEN
+                NULL;
+            END;
+        END IF;
+        
+        -- Garantir que a constraint FK existe
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints 
+            WHERE table_name = 'atendimentos' 
+            AND constraint_name = 'fk_atendimento_equipe'
+        ) THEN
+            BEGIN
+                ALTER TABLE atendimentos 
+                    ADD CONSTRAINT fk_atendimento_equipe 
+                    FOREIGN KEY (id_equipe) REFERENCES equipes(id);
+            EXCEPTION WHEN OTHERS THEN
+                NULL;
+            END;
+        END IF;
+    END IF;
+END $$;
+
 -- ============================================================================
 -- SEÇÃO 6: TABELAS AUXILIARES
 -- ============================================================================
@@ -395,7 +472,7 @@ CREATE TABLE IF NOT EXISTS historico_ocorrencias (
     id BIGSERIAL PRIMARY KEY,
     id_ocorrencia BIGINT NOT NULL,
     id_usuario BIGINT NOT NULL,
-    acao VARCHAR(50) NOT NULL CHECK (acao IN ('ABERTURA', 'DESPACHO', 'ALTERACAO_STATUS', 'CANCELAMENTO', 'CONCLUSAO')),
+    acao VARCHAR(50) NOT NULL CHECK (acao IN ('ABERTURA', 'DESPACHO', 'CHEGADA', 'ALTERACAO_STATUS', 'CANCELAMENTO', 'CONCLUSAO')),
     status_anterior VARCHAR(20),
     status_novo VARCHAR(20) NOT NULL,
     descricao_acao TEXT,
@@ -507,6 +584,40 @@ CREATE INDEX IF NOT EXISTS idx_historico_ocorrencia_data_hora ON historico_ocorr
 CREATE INDEX IF NOT EXISTS idx_historico_ocorrencia_acao ON historico_ocorrencias(acao);
 CREATE INDEX IF NOT EXISTS idx_atendimento_rota_conexao_atendimento ON atendimento_rota_conexao(id_atendimento);
 CREATE INDEX IF NOT EXISTS idx_atendimento_rota_conexao_ordem ON atendimento_rota_conexao(id_atendimento, ordem);
+
+-- ============================================================================
+-- SEÇÃO 6.5: CORREÇÃO DA CONSTRAINT DE AÇÃO NO HISTÓRICO (ADICIONAR CHEGADA)
+-- ============================================================================
+
+DO $$
+BEGIN
+    -- Remover constraint antiga se existir
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE table_name = 'historico_ocorrencias' 
+        AND constraint_name LIKE '%acao%'
+    ) THEN
+        -- Buscar nome exato da constraint
+        FOR constraint_record IN 
+            SELECT conname
+            FROM pg_constraint
+            WHERE conrelid = 'historico_ocorrencias'::regclass
+            AND contype = 'c'
+            AND pg_get_constraintdef(oid) LIKE '%acao%'
+        LOOP
+            EXECUTE 'ALTER TABLE historico_ocorrencias DROP CONSTRAINT IF EXISTS ' || quote_ident(constraint_record.conname) || ' CASCADE';
+        END LOOP;
+    END IF;
+    
+    -- Adicionar nova constraint com CHEGADA incluída
+    ALTER TABLE historico_ocorrencias 
+        ADD CONSTRAINT historico_ocorrencias_acao_check 
+        CHECK (acao IN ('ABERTURA', 'DESPACHO', 'CHEGADA', 'ALTERACAO_STATUS', 'CANCELAMENTO', 'CONCLUSAO'));
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+WHEN OTHERS THEN
+    NULL;
+END $$;
 
 -- ============================================================================
 -- SEÇÃO 10: CRIAR USUÁRIO ADMINISTRADOR

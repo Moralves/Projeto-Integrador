@@ -27,6 +27,7 @@ com\vitalistech\sosrota\dominio\repositorio\EquipeRepositorio.class
 com\vitalistech\sosrota\web\dto\LoginDTO.class
 com\vitalistech\sosrota\dominio\modelo\AtendimentoRotaConexao.class
 com\vitalistech\sosrota\web\dto\CriarUsuarioDTO.class
+com\vitalistech\sosrota\web\dto\TimerOcorrenciaDTO.class
 com\vitalistech\sosrota\dominio\modelo\Gravidade.class
 com\vitalistech\sosrota\web\dto\LoginResponseDTO.class
 com\vitalistech\sosrota\dominio\modelo\Equipe.class
@@ -36,6 +37,7 @@ com\example\app\controller\ExampleController.class
 com\vitalistech\sosrota\web\dto\RegistrarOcorrenciaDTO.class
 com\vitalistech\sosrota\web\controlador\HistoricoOcorrenciaControlador.class
 com\vitalistech\sosrota\dominio\modelo\TipoAmbulancia.class
+com\vitalistech\sosrota\web\dto\DespachoResponseDTO.class
 com\vitalistech\sosrota\web\dto\EditarProfissionalDTO.class
 com\vitalistech\sosrota\dominio\servico\EquipeServico.class
 com\vitalistech\sosrota\web\dto\AmbulanciaSugeridaDTO.class

@@ -6,6 +6,7 @@ package com.vitalistech.sosrota.dominio.modelo;
 public enum AcaoHistorico {
     ABERTURA,
     DESPACHO,
+    CHEGADA,
     ALTERACAO_STATUS,
     CANCELAMENTO,
     CONCLUSAO

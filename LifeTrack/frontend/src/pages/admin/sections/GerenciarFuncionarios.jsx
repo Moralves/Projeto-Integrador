@@ -58,6 +58,13 @@ function GerenciarFuncionarios() {
   const handleEdit = async (id) => {
     try {
       const prof = await profissionalService.buscarPorId(id);
+      
+      // Verificar se o profissional está em atendimento
+      if (prof.status === 'EM_ATENDIMENTO') {
+        setError('Não é possível editar funcionário que está em atendimento. Finalize o atendimento antes de editar.');
+        return;
+      }
+      
       setFormData({
         nome: prof.nome,
         funcao: prof.funcao,
@@ -237,7 +244,14 @@ function GerenciarFuncionarios() {
                       <button
                         className="btn-toggle editar"
                         onClick={() => handleEdit(prof.id)}
-                        style={{ backgroundColor: '#4a90e2', color: 'white' }}
+                        disabled={prof.status === 'EM_ATENDIMENTO'}
+                        style={{ 
+                          backgroundColor: prof.status === 'EM_ATENDIMENTO' ? '#6c757d' : '#4a90e2', 
+                          color: 'white',
+                          opacity: prof.status === 'EM_ATENDIMENTO' ? 0.6 : 1,
+                          cursor: prof.status === 'EM_ATENDIMENTO' ? 'not-allowed' : 'pointer'
+                        }}
+                        title={prof.status === 'EM_ATENDIMENTO' ? 'Não é possível editar funcionário em atendimento' : 'Editar funcionário'}
                       >
                         Editar
                       </button>
@@ -332,11 +346,12 @@ function GerenciarFuncionarios() {
                 </select>
               </div>
               <div className="form-group">
-                <label>Contato</label>
+                <label>Contato *</label>
                 <input
-                  type="text"
+                  type="tel"
                   value={formData.contato}
                   onChange={(e) => setFormData({ ...formData, contato: e.target.value })}
+                  required
                   placeholder="(11) 99999-1111"
                 />
               </div>

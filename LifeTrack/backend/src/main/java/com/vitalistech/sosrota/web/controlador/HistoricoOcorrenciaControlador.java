@@ -129,6 +129,8 @@ public class HistoricoOcorrenciaControlador {
         dto.setUsuarioNome(historico.getUsuarioNome());
         dto.setUsuarioLogin(historico.getUsuarioLogin());
         dto.setUsuarioPerfil(historico.getUsuarioPerfil());
+        dto.setPlacaAmbulancia(historico.getPlacaAmbulancia());
+        dto.setAcaoAmbulancia(historico.getAcaoAmbulancia());
         return dto;
     }
 }

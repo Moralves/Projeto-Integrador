@@ -45,4 +45,20 @@ public class EquipeControlador {
     public List<Equipe> equipesDisponiveis() {
         return equipeRepositorio.equipesDisponiveis();
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Equipe> atualizar(@PathVariable Long id, @RequestBody @Valid CriarEquipeDTO dto) {
+        Equipe equipe = equipeServico.atualizarEquipe(
+                id,
+                dto.getDescricao(),
+                dto.getIdsProfissionais()
+        );
+        return ResponseEntity.ok(equipe);
+    }
+
+    @GetMapping("/{id}/status")
+    public ResponseEntity<Boolean> verificarStatus(@PathVariable Long id) {
+        boolean emAtendimento = equipeServico.equipeEmAtendimento(id);
+        return ResponseEntity.ok(emAtendimento);
+    }
 }
