@@ -37,6 +37,31 @@ public class HistoricoOcorrenciaServico {
                                              StatusOcorrencia statusAnterior,
                                              StatusOcorrencia statusNovo,
                                              String descricaoAcao) {
+        return registrarAcao(ocorrencia, usuario, acao, statusAnterior, statusNovo, descricaoAcao, null, null);
+    }
+
+    /**
+     * Registra uma ação no histórico de ocorrências com informações da ambulância.
+     * Captura um snapshot completo das informações da ocorrência, do usuário e da ambulância.
+     * 
+     * @param ocorrencia A ocorrência relacionada
+     * @param usuario O usuário que realizou a ação
+     * @param acao O tipo de ação realizada
+     * @param statusAnterior O status anterior da ocorrência (pode ser null)
+     * @param statusNovo O novo status da ocorrência
+     * @param descricaoAcao Descrição detalhada da ação (opcional)
+     * @param placaAmbulancia Placa da ambulância envolvida (opcional)
+     * @param acaoAmbulancia Ação que a ambulância está executando (ex: "Indo até o local", "Retornando para base")
+     */
+    @Transactional
+    public HistoricoOcorrencia registrarAcao(Ocorrencia ocorrencia,
+                                             Usuario usuario,
+                                             AcaoHistorico acao,
+                                             StatusOcorrencia statusAnterior,
+                                             StatusOcorrencia statusNovo,
+                                             String descricaoAcao,
+                                             String placaAmbulancia,
+                                             String acaoAmbulancia) {
         
         HistoricoOcorrencia historico = new HistoricoOcorrencia();
         historico.setOcorrencia(ocorrencia);
@@ -60,6 +85,10 @@ public class HistoricoOcorrenciaServico {
         historico.setUsuarioLogin(usuario.getLogin());
         historico.setUsuarioPerfil(usuario.getPerfil() != null ? usuario.getPerfil() : "USER");
 
+        // Informações da ambulância
+        historico.setPlacaAmbulancia(placaAmbulancia);
+        historico.setAcaoAmbulancia(acaoAmbulancia);
+
         return historicoRepositorio.save(historico);
     }
 
@@ -70,7 +99,7 @@ public class HistoricoOcorrenciaServico {
     @Transactional
     public HistoricoOcorrencia registrarAbertura(Ocorrencia ocorrencia, Usuario usuario) {
         String descricao = String.format(
-            "Ocorrência aberta: %s - Gravidade: %s - Local: %s",
+            "Tipo: %s - Ocorrência aberta. Gravidade: %s - Local: %s",
             ocorrencia.getTipoOcorrencia(),
             ocorrencia.getGravidade(),
             ocorrencia.getBairroLocal() != null ? ocorrencia.getBairroLocal().getNome() : "Não informado"
@@ -92,8 +121,18 @@ public class HistoricoOcorrenciaServico {
      */
     @Transactional
     public HistoricoOcorrencia registrarDespacho(Ocorrencia ocorrencia, Usuario usuario, String detalhes) {
+        return registrarDespacho(ocorrencia, usuario, detalhes, null);
+    }
+
+    /**
+     * Registra o despacho de uma ocorrência com informações da ambulância.
+     * Método auxiliar específico para despacho.
+     */
+    @Transactional
+    public HistoricoOcorrencia registrarDespacho(Ocorrencia ocorrencia, Usuario usuario, String detalhes, String placaAmbulancia) {
         String descricao = String.format(
-            "Ocorrência despachada. %s",
+            "Tipo: %s - Ocorrência despachada. %s",
+            ocorrencia.getTipoOcorrencia(),
             detalhes != null ? detalhes : ""
         );
         
@@ -103,7 +142,9 @@ public class HistoricoOcorrenciaServico {
             AcaoHistorico.DESPACHO,
             StatusOcorrencia.ABERTA,
             StatusOcorrencia.DESPACHADA,
-            descricao
+            descricao,
+            placaAmbulancia,
+            "Indo até o local"
         );
     }
 

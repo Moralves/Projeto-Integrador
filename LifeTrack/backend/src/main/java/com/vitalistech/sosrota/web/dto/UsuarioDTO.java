@@ -13,6 +13,7 @@ public class UsuarioDTO {
     private String username;
     private String nome;
     private String email;
+    private String telefone;
     private List<String> roles;
     private boolean ativo;
 
@@ -20,10 +21,15 @@ public class UsuarioDTO {
     }
 
     public UsuarioDTO(Long id, String username, String nome, String email, String perfil, boolean ativo) {
+        this(id, username, nome, email, null, perfil, ativo);
+    }
+
+    public UsuarioDTO(Long id, String username, String nome, String email, String telefone, String perfil, boolean ativo) {
         this.id = id;
         this.username = username;
         this.nome = nome != null ? nome : username;
         this.email = email != null ? email : username + "@sistema.local";
+        this.telefone = telefone;
         // Converter perfil (string) para lista de roles
         if (perfil != null && !perfil.isEmpty()) {
             this.roles = Arrays.asList(perfil.split(","));
@@ -79,6 +85,14 @@ public class UsuarioDTO {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
     }
 }
 

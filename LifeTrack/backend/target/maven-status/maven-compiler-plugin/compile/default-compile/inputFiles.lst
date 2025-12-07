@@ -58,10 +58,12 @@ B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\Bairr
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\CriarAmbulanciaDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\CriarEquipeDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\CriarUsuarioDTO.java
+B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\DespachoResponseDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\EditarProfissionalDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\HistoricoOcorrenciaDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\LoginDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\LoginResponseDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\RegistrarOcorrenciaDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\RelatorioOcorrenciaDTO.java
+B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\TimerOcorrenciaDTO.java
 B:\PI-2025\LifeTrack\backend\src\main\java\com\vitalistech\sosrota\web\dto\UsuarioDTO.java

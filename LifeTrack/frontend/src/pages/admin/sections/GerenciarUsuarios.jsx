@@ -13,6 +13,7 @@ function GerenciarUsuarios() {
     password: '',
     nome: '',
     email: '',
+    telefone: '',
   });
 
   useEffect(() => {
@@ -40,6 +41,7 @@ function GerenciarUsuarios() {
         password: '',
         nome: usuario.nome,
         email: usuario.email,
+        telefone: usuario.telefone || '',
       });
     } else {
       setEditingUsuario(null);
@@ -48,6 +50,7 @@ function GerenciarUsuarios() {
         password: '',
         nome: '',
         email: '',
+        telefone: '',
       });
     }
     setShowModal(true);
@@ -131,6 +134,7 @@ function GerenciarUsuarios() {
                 <th>Usuário</th>
                 <th>Nome</th>
                 <th>Email</th>
+                <th>Telefone</th>
                 <th>Roles</th>
                 <th>Status</th>
                 <th>Ações</th>
@@ -139,7 +143,7 @@ function GerenciarUsuarios() {
             <tbody>
               {usuarios.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="empty-message">
+                  <td colSpan="8" className="empty-message">
                     Nenhum usuário cadastrado
                   </td>
                 </tr>
@@ -150,6 +154,7 @@ function GerenciarUsuarios() {
                     <td>{usuario.username}</td>
                     <td>{usuario.nome}</td>
                     <td>{usuario.email}</td>
+                    <td>{usuario.telefone || '-'}</td>
                     <td>
                       <span className="role-badge">
                         {usuario.roles && usuario.roles.length > 0 
@@ -232,6 +237,16 @@ function GerenciarUsuarios() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                />
+              </div>
+              <div className="form-group">
+                <label>Telefone *</label>
+                <input
+                  type="tel"
+                  value={formData.telefone}
+                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                  required
+                  placeholder="(00) 00000-0000"
                 />
               </div>
               {error && <div className="form-error">{error}</div>}

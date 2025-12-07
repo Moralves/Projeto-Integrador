@@ -16,6 +16,9 @@ public class CriarUsuarioDTO {
 
     private String email;
 
+    @NotBlank(message = "Telefone é obrigatório")
+    private String telefone;
+
     public String getUsername() {
         return username;
     }
@@ -46,6 +49,14 @@ public class CriarUsuarioDTO {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
     }
 }
 

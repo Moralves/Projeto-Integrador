@@ -25,6 +25,10 @@ public class HistoricoOcorrenciaDTO {
     private String usuarioNome;
     private String usuarioLogin;
     private String usuarioPerfil;
+    
+    // Informações da ambulância
+    private String placaAmbulancia;
+    private String acaoAmbulancia;
 
     public HistoricoOcorrenciaDTO() {
     }
@@ -170,6 +174,22 @@ public class HistoricoOcorrenciaDTO {
 
     public void setUsuarioPerfil(String usuarioPerfil) {
         this.usuarioPerfil = usuarioPerfil;
+    }
+
+    public String getPlacaAmbulancia() {
+        return placaAmbulancia;
+    }
+
+    public void setPlacaAmbulancia(String placaAmbulancia) {
+        this.placaAmbulancia = placaAmbulancia;
+    }
+
+    public String getAcaoAmbulancia() {
+        return acaoAmbulancia;
+    }
+
+    public void setAcaoAmbulancia(String acaoAmbulancia) {
+        this.acaoAmbulancia = acaoAmbulancia;
     }
 }
 

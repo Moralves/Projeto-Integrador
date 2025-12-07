@@ -66,6 +66,13 @@ public class HistoricoOcorrencia {
     @Column(name = "usuario_perfil", length = 50)
     private String usuarioPerfil;
 
+    // Informações da ambulância no momento da ação
+    @Column(name = "placa_ambulancia", length = 20)
+    private String placaAmbulancia;
+
+    @Column(name = "acao_ambulancia", length = 100)
+    private String acaoAmbulancia; // Ex: "Indo até o local", "Retornando para base"
+
     public HistoricoOcorrencia() {
         this.dataHora = LocalDateTime.now();
     }
@@ -188,6 +195,22 @@ public class HistoricoOcorrencia {
 
     public void setUsuarioPerfil(String usuarioPerfil) {
         this.usuarioPerfil = usuarioPerfil;
+    }
+
+    public String getPlacaAmbulancia() {
+        return placaAmbulancia;
+    }
+
+    public void setPlacaAmbulancia(String placaAmbulancia) {
+        this.placaAmbulancia = placaAmbulancia;
+    }
+
+    public String getAcaoAmbulancia() {
+        return acaoAmbulancia;
+    }
+
+    public void setAcaoAmbulancia(String acaoAmbulancia) {
+        this.acaoAmbulancia = acaoAmbulancia;
     }
 }
 

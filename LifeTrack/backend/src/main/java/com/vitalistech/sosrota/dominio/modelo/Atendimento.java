@@ -23,9 +23,15 @@ public class Atendimento {
     @JoinColumn(name = "id_ambulancia")
     private Ambulancia ambulancia;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "id_equipe")
+    private Equipe equipe;
+
     private LocalDateTime dataHoraDespacho;
 
     private LocalDateTime dataHoraChegada;
+
+    private LocalDateTime dataHoraRetorno;
 
     private Double distanciaKm;
 
@@ -57,6 +63,14 @@ public class Atendimento {
         this.ambulancia = ambulancia;
     }
 
+    public Equipe getEquipe() {
+        return equipe;
+    }
+
+    public void setEquipe(Equipe equipe) {
+        this.equipe = equipe;
+    }
+
     public LocalDateTime getDataHoraDespacho() {
         return dataHoraDespacho;
     }
@@ -71,6 +85,14 @@ public class Atendimento {
 
     public void setDataHoraChegada(LocalDateTime dataHoraChegada) {
         this.dataHoraChegada = dataHoraChegada;
+    }
+
+    public LocalDateTime getDataHoraRetorno() {
+        return dataHoraRetorno;
+    }
+
+    public void setDataHoraRetorno(LocalDateTime dataHoraRetorno) {
+        this.dataHoraRetorno = dataHoraRetorno;
     }
 
     public Double getDistanciaKm() {

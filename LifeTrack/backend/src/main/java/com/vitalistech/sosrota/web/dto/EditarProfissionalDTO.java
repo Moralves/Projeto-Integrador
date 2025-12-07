@@ -3,6 +3,7 @@ package com.vitalistech.sosrota.web.dto;
 import com.vitalistech.sosrota.dominio.modelo.FuncaoProfissional;
 import com.vitalistech.sosrota.dominio.modelo.StatusProfissional;
 import com.vitalistech.sosrota.dominio.modelo.Turno;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -16,6 +17,7 @@ public class EditarProfissionalDTO {
     @NotNull
     private FuncaoProfissional funcao;
 
+    @NotBlank(message = "Contato é obrigatório")
     private String contato;
 
     @NotNull
@@ -75,6 +77,7 @@ public class EditarProfissionalDTO {
         this.ativo = ativo;
     }
 }
+
 
 
 

@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ocorrenciaService } from '../../../services/ocorrenciaService';
 import SugerirAmbulancias from './SugerirAmbulancias';
+import SLATimer from '../../../components/SLATimer';
+import HistoricoOcorrencia from '../../../components/HistoricoOcorrencia';
 import '../OperatorLayout.css';
 
 function ListarOcorrencias() {
@@ -12,13 +14,17 @@ function ListarOcorrencias() {
   const [busca, setBusca] = useState('');
   const [despachando, setDespachando] = useState(null);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(null);
+  const isAutoRefreshRef = useRef(false);
+  const scrollPositionRef = useRef(0);
 
-  useEffect(() => {
-    carregarOcorrencias();
-  }, []);
-
-  const carregarOcorrencias = async () => {
+  const carregarOcorrencias = async (preservarScroll = false) => {
     try {
+      // Salvar posição do scroll antes de atualizar
+      if (preservarScroll) {
+        scrollPositionRef.current = window.scrollY || document.documentElement.scrollTop;
+        isAutoRefreshRef.current = true;
+      }
+      
       setLoading(true);
       const dados = await ocorrenciaService.listar();
       setOcorrencias(dados);
@@ -27,8 +33,31 @@ function ListarOcorrencias() {
       setError('Erro ao carregar ocorrências: ' + err.message);
     } finally {
       setLoading(false);
+      
+      // Restaurar posição do scroll após atualização
+      if (preservarScroll && isAutoRefreshRef.current) {
+        requestAnimationFrame(() => {
+          window.scrollTo({
+            top: scrollPositionRef.current,
+            behavior: 'auto'
+          });
+          isAutoRefreshRef.current = false;
+        });
+      }
     }
   };
+
+  useEffect(() => {
+    carregarOcorrencias(false);
+    
+    // Atualizar ocorrências a cada 5 segundos para refletir mudanças em tempo real
+    // Preservar posição do scroll durante atualizações automáticas
+    const interval = setInterval(() => {
+      carregarOcorrencias(true);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDespachar = async (id) => {
     if (!window.confirm('Deseja realmente despachar esta ocorrência?')) {
@@ -39,7 +68,7 @@ function ListarOcorrencias() {
       setDespachando(id);
       setError('');
       await ocorrenciaService.despachar(id);
-      await carregarOcorrencias();
+      await carregarOcorrencias(false);
       alert('Ocorrência despachada com sucesso!');
     } catch (err) {
       setError('Erro ao despachar ocorrência: ' + err.message);
@@ -253,54 +282,72 @@ function ListarOcorrencias() {
               </thead>
               <tbody>
                 {ocorrenciasFiltradas.map(oc => (
-                  <tr key={oc.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '16px', color: '#6b7280' }}>#{oc.id}</td>
-                    <td style={{ padding: '16px', color: '#374151' }}>{formatarData(oc.dataHoraAbertura)}</td>
-                    <td style={{ padding: '16px', color: '#374151' }}>
-                      {oc.bairroLocal ? oc.bairroLocal.nome : '-'}
-                    </td>
-                    <td style={{ padding: '16px', color: '#374151' }}>{oc.tipoOcorrencia}</td>
-                    <td style={{ padding: '16px' }}>{getGravidadeBadge(oc.gravidade)}</td>
-                    <td style={{ padding: '16px' }}>{getStatusBadge(oc.status)}</td>
-                    <td style={{ padding: '16px' }}>
-                      {oc.status === 'ABERTA' && (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            onClick={() => setMostrarSugestoes(oc.id)}
-                            style={{
-                              padding: '8px 16px',
-                              backgroundColor: '#2563eb',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '0.875rem',
-                              fontWeight: '600',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            🔍 Ver Sugestões
-                          </button>
-                          <button
-                            onClick={() => handleDespachar(oc.id)}
-                            disabled={despachando === oc.id}
-                            style={{
-                              padding: '8px 16px',
-                              backgroundColor: '#10b981',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '0.875rem',
-                              fontWeight: '600',
-                              cursor: despachando === oc.id ? 'not-allowed' : 'pointer',
-                              opacity: despachando === oc.id ? 0.6 : 1
-                            }}
-                          >
-                            {despachando === oc.id ? 'Despachando...' : '🚑 Despachar'}
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                  <React.Fragment key={oc.id}>
+                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={{ padding: '16px', color: '#6b7280' }}>#{oc.id}</td>
+                      <td style={{ padding: '16px', color: '#374151' }}>{formatarData(oc.dataHoraAbertura)}</td>
+                      <td style={{ padding: '16px', color: '#374151' }}>
+                        {oc.bairroLocal ? oc.bairroLocal.nome : '-'}
+                      </td>
+                      <td style={{ padding: '16px', color: '#374151' }}>{oc.tipoOcorrencia}</td>
+                      <td style={{ padding: '16px' }}>{getGravidadeBadge(oc.gravidade)}</td>
+                      <td style={{ padding: '16px' }}>{getStatusBadge(oc.status)}</td>
+                      <td style={{ padding: '16px' }}>
+                        {oc.status === 'ABERTA' && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={() => setMostrarSugestoes(oc.id)}
+                              style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#2563eb',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '0.875rem',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              🔍 Ver Sugestões
+                            </button>
+                            <button
+                              onClick={() => handleDespachar(oc.id)}
+                              disabled={despachando === oc.id}
+                              style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '0.875rem',
+                                fontWeight: '600',
+                                cursor: despachando === oc.id ? 'not-allowed' : 'pointer',
+                                opacity: despachando === oc.id ? 0.6 : 1
+                              }}
+                            >
+                              {despachando === oc.id ? 'Despachando...' : '🚑 Despachar'}
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    {(oc.status === 'ABERTA' || oc.status === 'DESPACHADA' || oc.status === 'EM_ATENDIMENTO' || oc.status === 'CONCLUIDA') && (
+                      <>
+                        <tr>
+                          <td colSpan="7" style={{ padding: '0 16px 16px 16px' }}>
+                            <SLATimer ocorrenciaId={oc.id} status={oc.status} />
+                          </td>
+                        </tr>
+                        {(oc.status === 'DESPACHADA' || oc.status === 'EM_ATENDIMENTO' || oc.status === 'CONCLUIDA') && (
+                          <tr>
+                            <td colSpan="7" style={{ padding: '0 16px 16px 16px' }}>
+                              <HistoricoOcorrencia ocorrenciaId={oc.id} atualizarEmTempoReal={oc.status !== 'CONCLUIDA'} />
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

@@ -73,5 +73,59 @@ export const equipeService = {
       throw error;
     }
   },
+
+  async atualizarEquipe(id, dados) {
+    try {
+      const response = await fetch(`${API_URL}/equipes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dados),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Erro ao atualizar equipe';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } else {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch (err) {
+          errorMessage = `Erro ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async verificarStatus(id) {
+    try {
+      const response = await fetch(`${API_URL}/equipes/${id}/status`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao verificar status da equipe');
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
