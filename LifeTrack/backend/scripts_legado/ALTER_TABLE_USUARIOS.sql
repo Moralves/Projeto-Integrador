@@ -1,6 +1,0 @@
--- Adicionar campos faltantes na tabela usuarios
-ALTER TABLE usuarios 
-ADD COLUMN IF NOT EXISTS nome VARCHAR(255),
-ADD COLUMN IF NOT EXISTS email VARCHAR(255),
-ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT TRUE;
-

@@ -682,19 +682,32 @@ public class OcorrenciaServico {
         dto.setChegouLocal(atendimento != null && atendimento.getDataHoraChegada() != null);
         dto.setFoiConcluida(ocorrencia.getStatus() == StatusOcorrencia.CONCLUIDA);
         
-        // Calcular tempo total: abertura + tempo até chegada
-        // O tempo total é sempre: tempo desde abertura até chegada (ou estimativa se ainda não chegou)
-        // Se já chegou: tempo desde abertura até chegada
-        // Se ainda não chegou: tempo desde abertura até agora (estimativa até chegada)
+        // Calcular tempo total: abertura + tempo até chegada + tempo de retorno (se concluída e retornou)
+        // O tempo total inclui:
+        // - Se ainda não chegou: tempo desde abertura até agora (estimativa)
+        // - Se chegou mas não retornou: tempo desde abertura até chegada + tempo decorrido de retorno
+        // - Se retornou: tempo desde abertura até retorno (tempo total completo)
         if (ocorrencia.getDataHoraAbertura() != null) {
             long tempoTotalSegundos = 0;
             Boolean chegouLocal = dto.getChegouLocal();
             Boolean foiDespachada = dto.getFoiDespachada();
+            Boolean retornouBase = dto.getRetornouBase();
             
-            if (Boolean.TRUE.equals(chegouLocal) && atendimento != null && atendimento.getDataHoraChegada() != null) {
-                // Se já chegou: tempo total = abertura até chegada
+            if (Boolean.TRUE.equals(retornouBase) && atendimento != null && atendimento.getDataHoraRetorno() != null) {
+                // Se retornou: tempo total = abertura até retorno (tempo completo incluindo retorno)
                 tempoTotalSegundos = java.time.Duration.between(
+                    ocorrencia.getDataHoraAbertura(), atendimento.getDataHoraRetorno()).getSeconds();
+            } else if (Boolean.TRUE.equals(chegouLocal) && atendimento != null && atendimento.getDataHoraChegada() != null) {
+                // Se chegou mas ainda não retornou: tempo desde abertura até chegada + tempo decorrido de retorno
+                long tempoAteChegadaSegundos = java.time.Duration.between(
                     ocorrencia.getDataHoraAbertura(), atendimento.getDataHoraChegada()).getSeconds();
+                long tempoRetornoSegundos = 0;
+                if (Boolean.TRUE.equals(dto.getFoiConcluida())) {
+                    // Se está concluída mas ainda não retornou, calcular tempo decorrido desde chegada
+                    tempoRetornoSegundos = java.time.Duration.between(
+                        atendimento.getDataHoraChegada(), agora).getSeconds();
+                }
+                tempoTotalSegundos = tempoAteChegadaSegundos + tempoRetornoSegundos;
             } else if (Boolean.TRUE.equals(foiDespachada) && atendimento != null && atendimento.getDataHoraDespacho() != null) {
                 // Se ainda não chegou mas foi despachada: tempo desde abertura até agora (estimativa)
                 tempoTotalSegundos = java.time.Duration.between(ocorrencia.getDataHoraAbertura(), agora).getSeconds();

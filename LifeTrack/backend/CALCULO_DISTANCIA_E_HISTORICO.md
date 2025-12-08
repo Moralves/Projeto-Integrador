@@ -83,7 +83,7 @@ Quando a ambulância chega ao local da ocorrência, a **OS é finalizada automat
    ↓
 4. Tempo de retorno contabilizado
    - Igual ao tempo de deslocamento
-   - SLA = tempo até chegada + tempo de retorno
+   - SLA = tempo até chegada
 ```
 
 ## 📊 Histórico em Tempo Real

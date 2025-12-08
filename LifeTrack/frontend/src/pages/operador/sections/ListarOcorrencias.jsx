@@ -14,6 +14,7 @@ function ListarOcorrencias() {
   const [busca, setBusca] = useState('');
   const [despachando, setDespachando] = useState(null);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(null);
+  const [ocorrenciasExpandidas, setOcorrenciasExpandidas] = useState(new Set());
   const isAutoRefreshRef = useRef(false);
   const scrollPositionRef = useRef(0);
 
@@ -140,6 +141,22 @@ function ListarOcorrencias() {
       (oc.bairroLocal && oc.bairroLocal.nome && oc.bairroLocal.nome.toLowerCase().includes(busca.toLowerCase()));
     return matchStatus && matchGravidade && matchBusca;
   });
+
+  const toggleExpandirOcorrencia = (ocorrenciaId) => {
+    setOcorrenciasExpandidas(prev => {
+      const novo = new Set(prev);
+      if (novo.has(ocorrenciaId)) {
+        novo.delete(ocorrenciaId);
+      } else {
+        novo.add(ocorrenciaId);
+      }
+      return novo;
+    });
+  };
+
+  const isOcorrenciaExpandida = (ocorrenciaId) => {
+    return ocorrenciasExpandidas.has(ocorrenciaId);
+  };
 
   return (
     <div>
@@ -281,74 +298,101 @@ function ListarOcorrencias() {
                 </tr>
               </thead>
               <tbody>
-                {ocorrenciasFiltradas.map(oc => (
-                  <React.Fragment key={oc.id}>
-                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '16px', color: '#6b7280' }}>#{oc.id}</td>
-                      <td style={{ padding: '16px', color: '#374151' }}>{formatarData(oc.dataHoraAbertura)}</td>
-                      <td style={{ padding: '16px', color: '#374151' }}>
-                        {oc.bairroLocal ? oc.bairroLocal.nome : '-'}
-                      </td>
-                      <td style={{ padding: '16px', color: '#374151' }}>{oc.tipoOcorrencia}</td>
-                      <td style={{ padding: '16px' }}>{getGravidadeBadge(oc.gravidade)}</td>
-                      <td style={{ padding: '16px' }}>{getStatusBadge(oc.status)}</td>
-                      <td style={{ padding: '16px' }}>
-                        {oc.status === 'ABERTA' && (
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                {ocorrenciasFiltradas.map(oc => {
+                  const isConcluida = oc.status === 'CONCLUIDA';
+                  const isExpandida = isOcorrenciaExpandida(oc.id);
+                  const deveMostrarDetalhes = !isConcluida || isExpandida;
+
+                  return (
+                    <React.Fragment key={oc.id}>
+                      <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '16px', color: '#6b7280' }}>#{oc.id}</td>
+                        <td style={{ padding: '16px', color: '#374151' }}>{formatarData(oc.dataHoraAbertura)}</td>
+                        <td style={{ padding: '16px', color: '#374151' }}>
+                          {oc.bairroLocal ? oc.bairroLocal.nome : '-'}
+                        </td>
+                        <td style={{ padding: '16px', color: '#374151' }}>{oc.tipoOcorrencia}</td>
+                        <td style={{ padding: '16px' }}>{getGravidadeBadge(oc.gravidade)}</td>
+                        <td style={{ padding: '16px' }}>{getStatusBadge(oc.status)}</td>
+                        <td style={{ padding: '16px' }}>
+                          {isConcluida ? (
                             <button
-                              onClick={() => setMostrarSugestoes(oc.id)}
+                              onClick={() => toggleExpandirOcorrencia(oc.id)}
                               style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#2563eb',
+                                backgroundColor: '#6366f1',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '6px',
                                 fontSize: '0.875rem',
                                 fontWeight: '600',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
                               }}
                             >
-                              🔍 Ver Sugestões
+                              {isExpandida ? '▼ Ocultar Detalhes' : '▶ Ver Detalhes'}
                             </button>
-                            <button
-                              onClick={() => handleDespachar(oc.id)}
-                              disabled={despachando === oc.id}
-                              style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#10b981',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontSize: '0.875rem',
-                                fontWeight: '600',
-                                cursor: despachando === oc.id ? 'not-allowed' : 'pointer',
-                                opacity: despachando === oc.id ? 0.6 : 1
-                              }}
-                            >
-                              {despachando === oc.id ? 'Despachando...' : '🚑 Despachar'}
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                    {(oc.status === 'ABERTA' || oc.status === 'DESPACHADA' || oc.status === 'EM_ATENDIMENTO' || oc.status === 'CONCLUIDA') && (
-                      <>
-                        <tr>
-                          <td colSpan="7" style={{ padding: '0 16px 16px 16px' }}>
-                            <SLATimer ocorrenciaId={oc.id} status={oc.status} />
-                          </td>
-                        </tr>
-                        {(oc.status === 'DESPACHADA' || oc.status === 'EM_ATENDIMENTO' || oc.status === 'CONCLUIDA') && (
+                          ) : (
+                            oc.status === 'ABERTA' && (
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                  onClick={() => setMostrarSugestoes(oc.id)}
+                                  style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#2563eb',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  🔍 Ver Sugestões
+                                </button>
+                                <button
+                                  onClick={() => handleDespachar(oc.id)}
+                                  disabled={despachando === oc.id}
+                                  style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#10b981',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600',
+                                    cursor: despachando === oc.id ? 'not-allowed' : 'pointer',
+                                    opacity: despachando === oc.id ? 0.6 : 1
+                                  }}
+                                >
+                                  {despachando === oc.id ? 'Despachando...' : '🚑 Despachar'}
+                                </button>
+                              </div>
+                            )
+                          )}
+                        </td>
+                      </tr>
+                      {deveMostrarDetalhes && (oc.status === 'ABERTA' || oc.status === 'DESPACHADA' || oc.status === 'EM_ATENDIMENTO' || oc.status === 'CONCLUIDA') && (
+                        <>
                           <tr>
                             <td colSpan="7" style={{ padding: '0 16px 16px 16px' }}>
-                              <HistoricoOcorrencia ocorrenciaId={oc.id} atualizarEmTempoReal={oc.status !== 'CONCLUIDA'} />
+                              <SLATimer ocorrenciaId={oc.id} status={oc.status} />
                             </td>
                           </tr>
-                        )}
-                      </>
-                    )}
-                  </React.Fragment>
-                ))}
+                          {(oc.status === 'DESPACHADA' || oc.status === 'EM_ATENDIMENTO' || oc.status === 'CONCLUIDA') && (
+                            <tr>
+                              <td colSpan="7" style={{ padding: '0 16px 16px 16px' }}>
+                                <HistoricoOcorrencia ocorrenciaId={oc.id} atualizarEmTempoReal={oc.status !== 'CONCLUIDA'} />
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -53,6 +53,7 @@ public class InicializadorBancoDados {
                 populator.setScripts(resource);
                 populator.setSeparator(";"); // Separador padrão para comandos SQL
                 populator.setContinueOnError(true); // Continua mesmo se houver erros (idempotente)
+                populator.setCommentPrefix("--"); // Prefixo para comentários SQL
                 
                 // Executar o script
                 populator.execute(dataSource);
