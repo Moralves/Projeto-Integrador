@@ -39,7 +39,28 @@ public class UsuarioControlador {
     public ResponseEntity<UsuarioDTO> criar(@RequestBody @Valid CriarUsuarioDTO dto) {
         // Verificar se o login já existe
         if (usuarioRepositorio.findByLogin(dto.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Login já está em uso");
+        }
+
+        // Normalizar telefone: remover formatação e espaços
+        final String telefoneNormalizado;
+        if (dto.getTelefone() != null && !dto.getTelefone().trim().isEmpty()) {
+            telefoneNormalizado = dto.getTelefone().trim().replaceAll("[^0-9]", "");
+            
+            // Verificar se o telefone já existe (comparando apenas números)
+            final String telefoneParaComparar = telefoneNormalizado;
+            usuarioRepositorio.findAll().stream()
+                .filter(u -> {
+                    String telefoneExistente = u.getTelefone() != null ? u.getTelefone().replaceAll("[^0-9]", "") : "";
+                    return telefoneExistente.equals(telefoneParaComparar);
+                })
+                .findFirst()
+                .ifPresent(usuarioExistente -> {
+                    throw new IllegalStateException(
+                        "Já existe um usuário cadastrado com o telefone: " + dto.getTelefone());
+                });
+        } else {
+            telefoneNormalizado = null;
         }
 
         Usuario usuario = new Usuario();
@@ -55,10 +76,10 @@ public class UsuarioControlador {
         // Admin só pode criar usuários comuns (USER), nunca ADMIN
         usuario.setPerfil("USER");
         
-        // Definir nome, email e telefone
+        // Definir nome, email e telefone (salvar apenas números)
         usuario.setNome(dto.getNome() != null && !dto.getNome().isEmpty() ? dto.getNome() : dto.getUsername());
         usuario.setEmail(dto.getEmail() != null && !dto.getEmail().isEmpty() ? dto.getEmail() : dto.getUsername() + "@sistema.local");
-        usuario.setTelefone(dto.getTelefone());
+        usuario.setTelefone(telefoneNormalizado);
         usuario.setAtivo(true);
 
         Usuario usuarioSalvo = usuarioRepositorio.save(usuario);
@@ -103,15 +124,38 @@ public class UsuarioControlador {
         // Admin não pode alterar perfil para ADMIN (sempre mantém como USER)
         // Não atualizamos o perfil aqui para garantir que não seja alterado para ADMIN
 
-        // Atualizar nome, email e telefone
+        // Normalizar telefone: remover formatação e espaços
+        final String telefoneNormalizado;
+        if (dto.getTelefone() != null && !dto.getTelefone().trim().isEmpty()) {
+            telefoneNormalizado = dto.getTelefone().trim().replaceAll("[^0-9]", "");
+            
+            // Verificar se o telefone já existe em outro usuário (comparando apenas números)
+            final String telefoneParaComparar = telefoneNormalizado;
+            final Long idUsuarioAtual = id;
+            usuarioRepositorio.findAll().stream()
+                .filter(u -> !u.getId().equals(idUsuarioAtual)) // Excluir o próprio usuário
+                .filter(u -> {
+                    String telefoneExistente = u.getTelefone() != null ? u.getTelefone().replaceAll("[^0-9]", "") : "";
+                    return telefoneExistente.equals(telefoneParaComparar);
+                })
+                .findFirst()
+                .ifPresent(usuarioExistente -> {
+                    throw new IllegalStateException(
+                        "Já existe outro usuário cadastrado com o telefone: " + dto.getTelefone());
+                });
+            
+            usuario.setTelefone(telefoneNormalizado);
+        } else {
+            telefoneNormalizado = null;
+            usuario.setTelefone(null);
+        }
+
+        // Atualizar nome e email
         if (dto.getNome() != null && !dto.getNome().isEmpty()) {
             usuario.setNome(dto.getNome());
         }
         if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
             usuario.setEmail(dto.getEmail());
-        }
-        if (dto.getTelefone() != null && !dto.getTelefone().isEmpty()) {
-            usuario.setTelefone(dto.getTelefone());
         }
 
         Usuario usuarioSalvo = usuarioRepositorio.save(usuario);

@@ -92,3 +92,4 @@ Comente o bean `inicializarBancoDados` em `InicializadorBancoDados.java`.
 **Apenas inicie o backend e o banco será configurado automaticamente!** 🚀
 
 
+

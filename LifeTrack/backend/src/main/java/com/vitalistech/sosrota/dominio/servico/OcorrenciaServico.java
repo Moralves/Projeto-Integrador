@@ -534,6 +534,43 @@ public class OcorrenciaServico {
                     ? atendimento.getAmbulancia().getPlaca() 
                     : null;
                 
+                // Criar histórico "voltando para base" quando a OS é concluída (se ainda não retornou)
+                if (placaAmbulancia != null && atendimento != null && atendimento.getDataHoraRetorno() == null) {
+                    // Calcular tempo estimado de retorno (igual ao tempo de deslocamento até chegada)
+                    long tempoRetornoEstimadoMinutos = 0;
+                    if (atendimento.getDataHoraChegada() != null && atendimento.getDataHoraDespacho() != null) {
+                        long tempoIdaSegundos = java.time.Duration.between(
+                            atendimento.getDataHoraDespacho(), atendimento.getDataHoraChegada()).getSeconds();
+                        tempoRetornoEstimadoMinutos = tempoIdaSegundos / 60;
+                    } else if (atendimento.getDistanciaKm() != null && atendimento.getDistanciaKm() > 0) {
+                        // Calcular tempo estimado baseado na distância (60 km/h)
+                        double distanciaKm = atendimento.getDistanciaKm();
+                        tempoRetornoEstimadoMinutos = (long) Math.ceil((distanciaKm / 60.0) * 60);
+                    }
+                    
+                    String descricaoVoltando = String.format(
+                        "Tipo: %s - Ambulância %s voltando para base. " +
+                        "Tempo estimado de retorno: %d minutos.",
+                        ocorrencia.getTipoOcorrencia(),
+                        placaAmbulancia,
+                        tempoRetornoEstimadoMinutos
+                    );
+                    
+                    // Criar histórico "voltando para base" com data/hora + 2 segundos (para aparecer primeiro)
+                    historicoOcorrenciaServico.registrarAcaoComDataHora(
+                        ocorrencia,
+                        usuarioConclusao,
+                        AcaoHistorico.ALTERACAO_STATUS,
+                        StatusOcorrencia.CONCLUIDA,
+                        StatusOcorrencia.CONCLUIDA,
+                        descricaoVoltando,
+                        placaAmbulancia,
+                        "Voltando para base",
+                        agora.plusSeconds(2)
+                    );
+                }
+                
+                // Agora criar o histórico de finalização com data/hora atual
                 String descricao = String.format(
                     "Tipo: %s - Ocorrência concluída. %s Tempo de atendimento: %d minutos. SLA: %d minutos. %s",
                     ocorrencia.getTipoOcorrencia(),
@@ -553,7 +590,7 @@ public class OcorrenciaServico {
                     StatusOcorrencia.CONCLUIDA,
                     descricao,
                     placaAmbulancia,
-                    placaAmbulancia != null ? "Retornando para base" : null
+                    null // Remover "Retornando para base" da finalização já que está no retorno
                 );
             } catch (Exception e) {
                 System.err.println("Erro ao registrar histórico de conclusão: " + e.getMessage());
@@ -887,18 +924,59 @@ public class OcorrenciaServico {
                 
                 // Tempo de retorno estimado = tempo de deslocamento (ida) - mesmo tempo usado para ida
                 // Se não tiver tempo calculado, usar tempo estimado baseado na distância
+                Long tempoRetornoEstimado = null;
                 if (tempoAteChegadaMinutosCalculado != null) {
-                    dto.setTempoRetornoMinutos(tempoAteChegadaMinutosCalculado);
+                    tempoRetornoEstimado = tempoAteChegadaMinutosCalculado;
+                    dto.setTempoRetornoMinutos(tempoRetornoEstimado);
                 } else if (atendimento.getDistanciaKm() != null && atendimento.getDistanciaKm() > 0) {
                     // Calcular tempo estimado de retorno baseado na distância (60 km/h)
                     double distanciaKm = atendimento.getDistanciaKm();
-                    long tempoEstimadoRetornoMinutos = (long) Math.ceil((distanciaKm / 60.0) * 60);
-                    dto.setTempoRetornoMinutos(tempoEstimadoRetornoMinutos);
+                    tempoRetornoEstimado = (long) Math.ceil((distanciaKm / 60.0) * 60);
+                    dto.setTempoRetornoMinutos(tempoRetornoEstimado);
+                }
+                
+                // Garantir que existe histórico "voltando para base" quando está retornando
+                try {
+                    java.util.List<HistoricoOcorrencia> historicos = historicoOcorrenciaServico.buscarHistoricoPorOcorrencia(idOcorrencia);
+                    boolean temHistoricoVoltando = historicos.stream().anyMatch(h -> 
+                        h.getAcaoAmbulancia() != null && h.getAcaoAmbulancia().equals("Voltando para base")
+                    );
+                    
+                    if (!temHistoricoVoltando && atendimento.getAmbulancia() != null) {
+                        Usuario usuarioParaHistorico = ocorrencia.getUsuarioRegistro();
+                        // Só criar histórico se houver usuário válido
+                        if (usuarioParaHistorico != null) {
+                            String placaAmbulancia = atendimento.getAmbulancia().getPlaca();
+                            String descricaoVoltando = String.format(
+                                "Tipo: %s - Ambulância %s voltando para base. " +
+                                "Tempo estimado de retorno: %d minutos.",
+                                ocorrencia.getTipoOcorrencia(),
+                                placaAmbulancia,
+                                tempoRetornoEstimado != null ? tempoRetornoEstimado : 0
+                            );
+                            
+                            historicoOcorrenciaServico.registrarAcaoComDataHora(
+                                ocorrencia,
+                                usuarioParaHistorico,
+                                AcaoHistorico.ALTERACAO_STATUS,
+                                StatusOcorrencia.CONCLUIDA,
+                                StatusOcorrencia.CONCLUIDA,
+                                descricaoVoltando,
+                                placaAmbulancia,
+                                "Voltando para base",
+                                agora.plusSeconds(2) // Data/hora futura para aparecer primeiro
+                            );
+                        }
+                    }
+                } catch (Exception e) {
+                    // Log mas continua
+                    System.err.println("Erro ao verificar/criar histórico 'voltando para base': " + e.getMessage());
                 }
                 
                 // Calcular tempo restante de retorno (DECRESCENTE) - mesmo tempo que foi usado para ida
                 if (dto.getTempoRetornoMinutos() != null && dto.getTempoRetornoDecorridoMinutos() != null) {
-                    long tempoRestanteRetorno = Math.max(0, dto.getTempoRetornoMinutos() - dto.getTempoRetornoDecorridoMinutos());
+                    Long tempoRestanteRetorno = Math.max(0L, dto.getTempoRetornoMinutos() - dto.getTempoRetornoDecorridoMinutos());
+                    dto.setTempoRestanteRetornoMinutos(tempoRestanteRetorno);
                     
                     // Se o tempo restante de retorno chegou a 0, registrar retorno automaticamente
                     // Isso torna a ambulância/equipe disponível novamente
@@ -909,6 +987,8 @@ public class OcorrenciaServico {
                             // Recarregar dados após retorno
                             atendimento = atendimentoRepositorio.findById(atendimento.getId())
                                 .orElseThrow(() -> new IllegalArgumentException("Atendimento não encontrado"));
+                            ocorrencia = ocorrenciaRepositorio.findById(ocorrencia.getId())
+                                .orElseThrow(() -> new IllegalArgumentException("Ocorrência não encontrada"));
                             dto.setRetornouBase(true);
                             dto.setDataHoraRetorno(atendimento.getDataHoraRetorno());
                             if (atendimento.getDataHoraRetorno() != null) {
@@ -1085,6 +1165,43 @@ public class OcorrenciaServico {
             try {
                 String placaAmbulancia = atendimento.getAmbulancia() != null ? atendimento.getAmbulancia().getPlaca() : null;
                 
+                // Criar histórico "voltando para base" quando a OS é concluída pela chegada
+                if (placaAmbulancia != null) {
+                    // Calcular tempo estimado de retorno (igual ao tempo de deslocamento até chegada)
+                    long tempoRetornoEstimadoMinutos = 0;
+                    if (atendimento.getDataHoraChegada() != null && atendimento.getDataHoraDespacho() != null) {
+                        long tempoIdaSegundos = java.time.Duration.between(
+                            atendimento.getDataHoraDespacho(), atendimento.getDataHoraChegada()).getSeconds();
+                        tempoRetornoEstimadoMinutos = tempoIdaSegundos / 60;
+                    } else if (atendimento.getDistanciaKm() != null && atendimento.getDistanciaKm() > 0) {
+                        // Calcular tempo estimado baseado na distância (60 km/h)
+                        double distanciaKm = atendimento.getDistanciaKm();
+                        tempoRetornoEstimadoMinutos = (long) Math.ceil((distanciaKm / 60.0) * 60);
+                    }
+                    
+                    String descricaoVoltando = String.format(
+                        "Tipo: %s - Ambulância %s voltando para base. " +
+                        "Tempo estimado de retorno: %d minutos.",
+                        ocorrencia.getTipoOcorrencia(),
+                        placaAmbulancia,
+                        tempoRetornoEstimadoMinutos
+                    );
+                    
+                    // Criar histórico "voltando para base" com data/hora + 2 segundos (para aparecer primeiro)
+                    historicoOcorrenciaServico.registrarAcaoComDataHora(
+                        ocorrencia,
+                        usuarioChegada,
+                        AcaoHistorico.ALTERACAO_STATUS,
+                        StatusOcorrencia.CONCLUIDA,
+                        StatusOcorrencia.CONCLUIDA,
+                        descricaoVoltando,
+                        placaAmbulancia,
+                        "Voltando para base",
+                        agora.plusSeconds(2) // Data/hora futura para aparecer primeiro
+                    );
+                }
+                
+                // Agora criar o histórico de finalização com data/hora atual
                 String descricao;
                 if (ocorrencia.getSlaCumprido() != null && ocorrencia.getSlaCumprido()) {
                     descricao = String.format(
@@ -1116,7 +1233,7 @@ public class OcorrenciaServico {
                     StatusOcorrencia.CONCLUIDA,
                     descricao,
                     placaAmbulancia,
-                    "Retornando para base"
+                    null // Remover "Retornando para base" da finalização já que está no retorno
                 );
             } catch (Exception e) {
                 System.err.println("Erro ao registrar histórico de chegada: " + e.getMessage());
@@ -1214,7 +1331,8 @@ public class OcorrenciaServico {
                 usuarioParaHistorico = ocorrencia.getUsuarioRegistro();
             }
             
-            historicoOcorrenciaServico.registrarAcao(
+            // Criar histórico "Retornou à base" com data/hora + 1 segundo (para aparecer antes da finalização)
+            historicoOcorrenciaServico.registrarAcaoComDataHora(
                 ocorrencia,
                 usuarioParaHistorico,
                 AcaoHistorico.ALTERACAO_STATUS,
@@ -1222,7 +1340,8 @@ public class OcorrenciaServico {
                 StatusOcorrencia.CONCLUIDA,
                 descricao,
                 ambulancia.getPlaca(),
-                "Retornou à base"
+                "Retornou à base",
+                agora.plusSeconds(1) // 1 segundo depois para aparecer antes da finalização
             );
         } catch (Exception e) {
             System.err.println("Erro ao registrar histórico de retorno: " + e.getMessage());

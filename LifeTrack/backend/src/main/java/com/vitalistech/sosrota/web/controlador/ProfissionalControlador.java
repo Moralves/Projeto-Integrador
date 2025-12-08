@@ -1,5 +1,6 @@
 package com.vitalistech.sosrota.web.controlador;
 
+import com.vitalistech.sosrota.dominio.modelo.Equipe;
 import com.vitalistech.sosrota.dominio.modelo.Profissional;
 import com.vitalistech.sosrota.dominio.modelo.StatusProfissional;
 import com.vitalistech.sosrota.dominio.modelo.Turno;
@@ -10,7 +11,11 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Endpoints de gestão de profissionais.
@@ -30,17 +35,45 @@ public class ProfissionalControlador {
     }
 
     @GetMapping
-    public List<Profissional> listar(
+    public List<Map<String, Object>> listar(
             @RequestParam(required = false) Turno turno,
             @RequestParam(required = false) StatusProfissional status) {
         
+        List<Profissional> profissionais;
         if (turno != null && status != null) {
-            return profissionalRepositorio.findByTurnoAndStatusAndAtivoTrue(turno, status);
+            profissionais = profissionalRepositorio.findByTurnoAndStatusAndAtivoTrue(turno, status);
         } else if (status != null) {
-            return profissionalRepositorio.findByStatusAndAtivoTrueOrderByNome(status);
+            profissionais = profissionalRepositorio.findByStatusAndAtivoTrueOrderByNome(status);
         } else {
-            return profissionalRepositorio.findAll();
+            profissionais = profissionalRepositorio.findAll();
         }
+        
+        // Enriquecer com informações de ambulância
+        return profissionais.stream().map(prof -> {
+            Map<String, Object> profissionalMap = new HashMap<>();
+            profissionalMap.put("id", prof.getId());
+            profissionalMap.put("nome", prof.getNome());
+            profissionalMap.put("funcao", prof.getFuncao() != null ? prof.getFuncao().name() : null);
+            profissionalMap.put("contato", prof.getContato());
+            profissionalMap.put("turno", prof.getTurno() != null ? prof.getTurno().name() : null);
+            profissionalMap.put("status", prof.getStatus() != null ? prof.getStatus().name() : null);
+            profissionalMap.put("ativo", prof.isAtivo());
+            
+            // Buscar equipe e ambulância vinculada
+            Optional<Equipe> equipeOpt = equipeRepositorio.findEquipeAtivaPorProfissional(prof.getId());
+            if (equipeOpt.isPresent()) {
+                Equipe equipe = equipeOpt.get();
+                profissionalMap.put("idEquipe", equipe.getId());
+                profissionalMap.put("descricaoEquipe", equipe.getDescricao());
+                if (equipe.getAmbulancia() != null) {
+                    profissionalMap.put("idAmbulancia", equipe.getAmbulancia().getId());
+                    profissionalMap.put("placaAmbulancia", equipe.getAmbulancia().getPlaca());
+                    profissionalMap.put("tipoAmbulancia", equipe.getAmbulancia().getTipo() != null ? equipe.getAmbulancia().getTipo().name() : null);
+                }
+            }
+            
+            return profissionalMap;
+        }).collect(Collectors.toList());
     }
 
     @GetMapping("/disponiveis")
@@ -53,14 +86,56 @@ public class ProfissionalControlador {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Profissional> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> buscarPorId(@PathVariable Long id) {
         Profissional p = profissionalRepositorio.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
-        return ResponseEntity.ok(p);
+        
+        Map<String, Object> profissionalMap = new HashMap<>();
+        profissionalMap.put("id", p.getId());
+        profissionalMap.put("nome", p.getNome());
+        profissionalMap.put("funcao", p.getFuncao() != null ? p.getFuncao().name() : null);
+        profissionalMap.put("contato", p.getContato());
+        profissionalMap.put("turno", p.getTurno() != null ? p.getTurno().name() : null);
+        profissionalMap.put("status", p.getStatus() != null ? p.getStatus().name() : null);
+        profissionalMap.put("ativo", p.isAtivo());
+        
+        // Buscar equipe e ambulância vinculada
+        Optional<Equipe> equipeOpt = equipeRepositorio.findEquipeAtivaPorProfissional(p.getId());
+        if (equipeOpt.isPresent()) {
+            Equipe equipe = equipeOpt.get();
+            profissionalMap.put("idEquipe", equipe.getId());
+            profissionalMap.put("descricaoEquipe", equipe.getDescricao());
+            if (equipe.getAmbulancia() != null) {
+                profissionalMap.put("idAmbulancia", equipe.getAmbulancia().getId());
+                profissionalMap.put("placaAmbulancia", equipe.getAmbulancia().getPlaca());
+                profissionalMap.put("tipoAmbulancia", equipe.getAmbulancia().getTipo() != null ? equipe.getAmbulancia().getTipo().name() : null);
+            }
+        }
+        
+        return ResponseEntity.ok(profissionalMap);
     }
 
     @PostMapping
     public ResponseEntity<Profissional> cadastrar(@RequestBody @Valid Profissional p) {
+        // Normalizar contato: remover formatação e espaços
+        if (p.getContato() != null && !p.getContato().trim().isEmpty()) {
+            String contatoLimpo = p.getContato().trim().replaceAll("[^0-9]", "");
+            
+            // Verificar se já existe profissional com o mesmo contato (telefone)
+            profissionalRepositorio.findAll().stream()
+                .filter(prof -> {
+                    String contatoExistente = prof.getContato() != null ? prof.getContato().replaceAll("[^0-9]", "") : "";
+                    return contatoExistente.equals(contatoLimpo);
+                })
+                .findFirst()
+                .ifPresent(profExistente -> {
+                    throw new IllegalStateException(
+                        "Já existe um funcionário cadastrado com o telefone/contato: " + p.getContato());
+                });
+            
+            p.setContato(contatoLimpo);
+        }
+        
         p.setAtivo(true);
         if (p.getStatus() == null) {
             p.setStatus(StatusProfissional.DISPONIVEL);
@@ -90,9 +165,28 @@ public class ProfissionalControlador {
             }
         }
 
+        // Normalizar contato: remover formatação e espaços
+        if (dto.getContato() != null && !dto.getContato().trim().isEmpty()) {
+            String contatoLimpo = dto.getContato().trim().replaceAll("[^0-9]", "");
+            
+            // Verificar se já existe outro profissional com o mesmo contato (telefone)
+            profissionalRepositorio.findAll().stream()
+                .filter(prof -> !prof.getId().equals(id)) // Excluir o próprio profissional
+                .filter(prof -> {
+                    String contatoExistente = prof.getContato() != null ? prof.getContato().replaceAll("[^0-9]", "") : "";
+                    return contatoExistente.equals(contatoLimpo);
+                })
+                .findFirst()
+                .ifPresent(profExistente -> {
+                    throw new IllegalStateException(
+                        "Já existe outro funcionário cadastrado com o telefone/contato: " + dto.getContato());
+                });
+            
+            p.setContato(contatoLimpo);
+        }
+
         p.setNome(dto.getNome());
         p.setFuncao(dto.getFuncao());
-        p.setContato(dto.getContato());
         p.setTurno(dto.getTurno());
         p.setStatus(dto.getStatus());
         p.setAtivo(dto.getAtivo());

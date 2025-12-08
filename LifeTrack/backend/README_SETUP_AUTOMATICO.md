@@ -184,3 +184,4 @@ Se tiver problemas:
 3. Verifique se o banco `pi_2025_2` existe
 4. Execute o script manualmente se necessário (último recurso)
 
+

@@ -61,4 +61,10 @@ public class EquipeControlador {
         boolean emAtendimento = equipeServico.equipeEmAtendimento(id);
         return ResponseEntity.ok(emAtendimento);
     }
+
+    @DeleteMapping("/por-ambulancia/{idAmbulancia}")
+    public ResponseEntity<Void> removerEquipePorAmbulancia(@PathVariable Long idAmbulancia) {
+        equipeServico.removerEquipePorAmbulancia(idAmbulancia);
+        return ResponseEntity.ok().build();
+    }
 }

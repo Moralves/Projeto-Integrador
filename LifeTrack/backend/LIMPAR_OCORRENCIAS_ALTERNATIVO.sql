@@ -50,3 +50,4 @@ SELECT COUNT(*) as total_atendimentos FROM atendimentos; -- Deve ser 0
 SELECT COUNT(*) as total_historico FROM historico_ocorrencias; -- Deve ser 0
 SELECT COUNT(*) as total_rotas FROM atendimento_rota_conexao; -- Deve ser 0
 
+

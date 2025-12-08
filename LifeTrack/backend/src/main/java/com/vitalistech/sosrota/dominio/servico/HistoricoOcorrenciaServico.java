@@ -62,6 +62,33 @@ public class HistoricoOcorrenciaServico {
                                              String descricaoAcao,
                                              String placaAmbulancia,
                                              String acaoAmbulancia) {
+        return registrarAcaoComDataHora(ocorrencia, usuario, acao, statusAnterior, statusNovo, descricaoAcao, placaAmbulancia, acaoAmbulancia, LocalDateTime.now());
+    }
+
+    /**
+     * Registra uma ação no histórico de ocorrências com informações da ambulância e data/hora customizada.
+     * Captura um snapshot completo das informações da ocorrência, do usuário e da ambulância.
+     * 
+     * @param ocorrencia A ocorrência relacionada
+     * @param usuario O usuário que realizou a ação
+     * @param acao O tipo de ação realizada
+     * @param statusAnterior O status anterior da ocorrência (pode ser null)
+     * @param statusNovo O novo status da ocorrência
+     * @param descricaoAcao Descrição detalhada da ação (opcional)
+     * @param placaAmbulancia Placa da ambulância envolvida (opcional)
+     * @param acaoAmbulancia Ação que a ambulância está executando (ex: "Indo até o local", "Retornando para base")
+     * @param dataHora Data/hora customizada para o registro
+     */
+    @Transactional
+    public HistoricoOcorrencia registrarAcaoComDataHora(Ocorrencia ocorrencia,
+                                                        Usuario usuario,
+                                                        AcaoHistorico acao,
+                                                        StatusOcorrencia statusAnterior,
+                                                        StatusOcorrencia statusNovo,
+                                                        String descricaoAcao,
+                                                        String placaAmbulancia,
+                                                        String acaoAmbulancia,
+                                                        LocalDateTime dataHora) {
         
         HistoricoOcorrencia historico = new HistoricoOcorrencia();
         historico.setOcorrencia(ocorrencia);
@@ -70,7 +97,7 @@ public class HistoricoOcorrenciaServico {
         historico.setStatusAnterior(statusAnterior);
         historico.setStatusNovo(statusNovo);
         historico.setDescricaoAcao(descricaoAcao);
-        historico.setDataHora(LocalDateTime.now());
+        historico.setDataHora(dataHora);
 
         // Snapshot das informações da ocorrência
         historico.setTipoOcorrencia(ocorrencia.getTipoOcorrencia());

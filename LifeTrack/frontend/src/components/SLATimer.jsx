@@ -73,8 +73,8 @@ function SLATimer({ ocorrenciaId, status }) {
       setError(null);
       setLoading(false);
       
-      // Só iniciar intervalo se ainda não retornou e status não for CONCLUIDA
-      if (dados && dados.retornouBase !== true && status !== 'CONCLUIDA') {
+      // Continuar atualizando se ainda não retornou (mesmo se status for CONCLUIDA, para atualizar o tempo de retorno)
+      if (dados && dados.retornouBase !== true) {
         interval = setInterval(carregarTimer, 2000);
       }
     }).catch(err => {
@@ -268,7 +268,8 @@ function SLATimer({ ocorrenciaId, status }) {
           <span className="sla-detalhe-label">Tempo Total:</span>
           <span className="sla-detalhe-valor">{timer.tempoTotalFormatado || '--'}</span>
         </div>
-        {timer.tempoRestanteAteChegadaMinutos !== null && timer.tempoRestanteAteChegadaMinutos !== undefined && !timer.chegouLocal && (
+        {/* Mostrar tempo restante até chegada quando está indo (verde) OU tempo restante de retorno quando está voltando (amarelo) */}
+        {!timer.foiConcluida && timer.tempoRestanteAteChegadaMinutos !== null && timer.tempoRestanteAteChegadaMinutos !== undefined && !timer.chegouLocal && (
           <div className="sla-detalhe-item">
             <span className="sla-detalhe-label">Tempo Restante até Chegada:</span>
             <span className="sla-detalhe-valor" style={{ 
@@ -279,7 +280,20 @@ function SLATimer({ ocorrenciaId, status }) {
             </span>
           </div>
         )}
-        {timer.tempoAteChegadaMinutos !== null && timer.chegouLocal && (
+        {/* Quando está retornando: mostrar "Tempo até Chegada" em amarelo com tempo decrescente de retorno */}
+        {timer.foiConcluida && !timer.retornouBase && timer.tempoRestanteRetornoMinutos !== null && timer.tempoRestanteRetornoMinutos !== undefined && (
+          <div className="sla-detalhe-item">
+            <span className="sla-detalhe-label">Tempo Restante até Chegada:</span>
+            <span className="sla-detalhe-valor" style={{ 
+              color: '#ffc107',
+              fontWeight: 'bold'
+            }}>
+              {timer.tempoRestanteRetornoMinutos > 0 ? `${timer.tempoRestanteRetornoMinutos}m` : 'Retornou!'}
+            </span>
+          </div>
+        )}
+        {/* Quando chegou mas ainda não concluiu: mostrar tempo fixo */}
+        {timer.tempoAteChegadaMinutos !== null && timer.chegouLocal && !timer.foiConcluida && (
           <div className="sla-detalhe-item">
             <span className="sla-detalhe-label">Tempo até Chegada:</span>
             <span className="sla-detalhe-valor">
@@ -301,37 +315,21 @@ function SLATimer({ ocorrenciaId, status }) {
             <span className="sla-detalhe-valor">{timer.slaMinutos}m</span>
           </div>
         )}
-        {timer.foiConcluida && (
-          <>
-            {timer.retornouBase ? (
-              <div className="sla-detalhe-item">
-                <span className="sla-detalhe-label">Tempo Retorno:</span>
-                <span className="sla-detalhe-valor" style={{ color: '#28a745' }}>
-                  {timer.tempoRetornoDecorridoMinutos !== null ? `${timer.tempoRetornoDecorridoMinutos}m` : '--'} ✅
-                </span>
-              </div>
-            ) : (
-              <div className="sla-detalhe-item">
-                <span className="sla-detalhe-label">Tempo Restante Retorno:</span>
-                <span className="sla-detalhe-valor" style={{ 
-                  color: '#ffc107',
-                  fontWeight: 'bold'
-                }}>
-                  {timer.tempoRetornoMinutos !== null && timer.tempoRetornoDecorridoMinutos !== null 
-                    ? `${Math.max(0, timer.tempoRetornoMinutos - timer.tempoRetornoDecorridoMinutos)}m` 
-                    : '--'} (em andamento)
-                </span>
-              </div>
-            )}
-            {timer.retornouBase && (
-              <div className="sla-detalhe-item">
-                <span className="sla-detalhe-label">Status:</span>
-                <span className="sla-detalhe-valor" style={{ color: '#28a745', fontWeight: 'bold' }}>
-                  Ambulância e equipe disponíveis ✅
-                </span>
-              </div>
-            )}
-          </>
+        {timer.foiConcluida && timer.retornouBase && (
+          <div className="sla-detalhe-item">
+            <span className="sla-detalhe-label">Tempo Retorno:</span>
+            <span className="sla-detalhe-valor" style={{ color: '#28a745' }}>
+              {timer.tempoRetornoDecorridoMinutos !== null ? `${timer.tempoRetornoDecorridoMinutos}m` : '--'} ✅
+            </span>
+          </div>
+        )}
+        {timer.foiConcluida && timer.retornouBase && (
+          <div className="sla-detalhe-item">
+            <span className="sla-detalhe-label">Status:</span>
+            <span className="sla-detalhe-valor" style={{ color: '#28a745', fontWeight: 'bold' }}>
+              Ambulância e equipe disponíveis ✅
+            </span>
+          </div>
         )}
       </div>
     </div>

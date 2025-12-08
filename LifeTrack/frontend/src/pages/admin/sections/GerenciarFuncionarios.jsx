@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { profissionalService } from '../../../services/profissionalService';
+import { formatarTelefone, removerFormatacaoTelefone, validarTelefone } from '../../../utils/telefoneUtils';
 import '../AdminDashboard.css';
 
 function GerenciarFuncionarios() {
@@ -43,15 +44,28 @@ function GerenciarFuncionarios() {
     e.preventDefault();
     try {
       setError('');
+      
+      // Validar telefone antes de enviar
+      if (!validarTelefone(formData.contato)) {
+        setError('Telefone inválido. Use o formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX');
+        return;
+      }
+      
+      // Remover formatação antes de enviar ao backend
+      const dadosEnvio = {
+        ...formData,
+        contato: removerFormatacaoTelefone(formData.contato)
+      };
+      
       if (editingId) {
-        await profissionalService.editar(editingId, formData);
+        await profissionalService.editar(editingId, dadosEnvio);
       } else {
-        await profissionalService.cadastrar(formData);
+        await profissionalService.cadastrar(dadosEnvio);
       }
       handleCloseModal();
       carregarProfissionais();
     } catch (err) {
-      setError('Erro ao salvar profissional: ' + err.message);
+      setError(err.message || 'Erro ao salvar profissional');
     }
   };
 
@@ -68,7 +82,7 @@ function GerenciarFuncionarios() {
       setFormData({
         nome: prof.nome,
         funcao: prof.funcao,
-        contato: prof.contato || '',
+        contato: prof.contato ? formatarTelefone(prof.contato) : '',
         turno: prof.turno || 'MANHA',
         status: prof.status || 'DISPONIVEL',
         ativo: prof.ativo !== undefined ? prof.ativo : true,
@@ -190,7 +204,6 @@ function GerenciarFuncionarios() {
             <option value="">Todos os Status</option>
             <option value="DISPONIVEL">Disponível</option>
             <option value="EM_ATENDIMENTO">Em Atendimento</option>
-            <option value="EM_FOLGA">Em Folga</option>
             <option value="INATIVO">Inativo</option>
           </select>
         </div>
@@ -209,6 +222,7 @@ function GerenciarFuncionarios() {
                 <th>Turno</th>
                 <th>Status</th>
                 <th>Contato</th>
+                <th>Ambulância</th>
                 <th>Ativo</th>
                 <th>Ações</th>
               </tr>
@@ -216,7 +230,7 @@ function GerenciarFuncionarios() {
             <tbody>
               {profissionais.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="empty-message">
+                  <td colSpan="9" className="empty-message">
                     Nenhum profissional encontrado
                   </td>
                 </tr>
@@ -234,7 +248,14 @@ function GerenciarFuncionarios() {
                         {getStatusLabel(prof.status)}
                       </span>
                     </td>
-                    <td>{prof.contato || '-'}</td>
+                    <td>{prof.contato ? formatarTelefone(prof.contato) : '-'}</td>
+                    <td>
+                      {prof.placaAmbulancia ? (
+                        <span>{prof.placaAmbulancia}</span>
+                      ) : (
+                        <span style={{ color: '#999', fontStyle: 'italic' }}>Sem vínculo</span>
+                      )}
+                    </td>
                     <td>
                       <span className={`status-badge ${prof.ativo ? 'ativo' : 'inativo'}`}>
                         {prof.ativo ? 'Sim' : 'Não'}
@@ -255,40 +276,6 @@ function GerenciarFuncionarios() {
                       >
                         Editar
                       </button>
-                      {prof.status === 'DISPONIVEL' && (
-                        <button
-                          className="btn-toggle"
-                          onClick={() => handleAlterarStatus(prof.id, 'EM_FOLGA')}
-                          disabled={prof.status === 'EM_ATENDIMENTO'}
-                          style={{ 
-                            backgroundColor: '#f39c12', 
-                            color: 'white', 
-                            fontSize: '0.85rem',
-                            opacity: prof.status === 'EM_ATENDIMENTO' ? 0.5 : 1,
-                            cursor: prof.status === 'EM_ATENDIMENTO' ? 'not-allowed' : 'pointer'
-                          }}
-                          title={prof.status === 'EM_ATENDIMENTO' ? 'Não é possível alterar status de funcionário em atendimento' : ''}
-                        >
-                          Folga
-                        </button>
-                      )}
-                      {prof.status === 'EM_FOLGA' && (
-                        <button
-                          className="btn-toggle"
-                          onClick={() => handleAlterarStatus(prof.id, 'DISPONIVEL')}
-                          disabled={prof.status === 'EM_ATENDIMENTO'}
-                          style={{ 
-                            backgroundColor: '#27ae60', 
-                            color: 'white', 
-                            fontSize: '0.85rem',
-                            opacity: prof.status === 'EM_ATENDIMENTO' ? 0.5 : 1,
-                            cursor: prof.status === 'EM_ATENDIMENTO' ? 'not-allowed' : 'pointer'
-                          }}
-                          title={prof.status === 'EM_ATENDIMENTO' ? 'Não é possível alterar status de funcionário em atendimento' : ''}
-                        >
-                          Disponível
-                        </button>
-                      )}
                       {prof.ativo && (
                         <button
                           className="btn-toggle desativar"
@@ -336,11 +323,22 @@ function GerenciarFuncionarios() {
                   value={formData.funcao}
                   onChange={(e) => setFormData({ ...formData, funcao: e.target.value })}
                   required
+                  disabled={!editingId}
+                  style={{
+                    backgroundColor: editingId ? '#fff' : '#f5f5f5',
+                    cursor: editingId ? 'pointer' : 'not-allowed',
+                    opacity: editingId ? 1 : 0.7
+                  }}
                 >
                   <option value="MEDICO">Médico</option>
                   <option value="ENFERMEIRO">Enfermeiro</option>
                   <option value="CONDUTOR">Condutor</option>
                 </select>
+                {!editingId && (
+                  <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                    A função não pode ser alterada após o cadastro
+                  </small>
+                )}
               </div>
               <div className="form-group">
                 <label>Turno *</label>
@@ -363,7 +361,6 @@ function GerenciarFuncionarios() {
                 >
                   <option value="DISPONIVEL">Disponível</option>
                   <option value="EM_ATENDIMENTO">Em Atendimento</option>
-                  <option value="EM_FOLGA">Em Folga</option>
                   <option value="INATIVO">Inativo</option>
                 </select>
               </div>
@@ -372,21 +369,45 @@ function GerenciarFuncionarios() {
                 <input
                   type="tel"
                   value={formData.contato}
-                  onChange={(e) => setFormData({ ...formData, contato: e.target.value })}
+                  onChange={(e) => {
+                    const valorFormatado = formatarTelefone(e.target.value);
+                    setFormData({ ...formData, contato: valorFormatado });
+                  }}
+                  onBlur={(e) => {
+                    // Garantir formatação ao sair do campo
+                    const valorFormatado = formatarTelefone(e.target.value);
+                    setFormData({ ...formData, contato: valorFormatado });
+                  }}
                   required
                   placeholder="(11) 99999-1111"
+                  maxLength={15}
                 />
+                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                  Formato: (XX) XXXXX-XXXX para celular ou (XX) XXXX-XXXX para fixo
+                </small>
               </div>
               {editingId && (
                 <div className="form-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={formData.ativo}
-                      onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                    />
-                    {' '}Ativo
-                  </label>
+                  <label>Status de Ativação *</label>
+                  <select
+                    value={formData.ativo ? 'true' : 'false'}
+                    onChange={(e) => setFormData({ ...formData, ativo: e.target.value === 'true' })}
+                    required
+                    style={{
+                      backgroundColor: '#fff',
+                      padding: '10px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd',
+                      fontSize: '0.95rem',
+                      width: '100%'
+                    }}
+                  >
+                    <option value="true">Ativo</option>
+                    <option value="false">Inativo</option>
+                  </select>
+                  <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                    Funcionários inativos não podem ser atribuídos a equipes
+                  </small>
                 </div>
               )}
               {error && <div className="form-error">{error}</div>}

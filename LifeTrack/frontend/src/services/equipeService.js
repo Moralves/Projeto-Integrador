@@ -127,5 +127,40 @@ export const equipeService = {
       throw error;
     }
   },
+
+  async removerEquipePorAmbulancia(idAmbulancia) {
+    try {
+      const response = await fetch(`${API_URL}/equipes/por-ambulancia/${idAmbulancia}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Erro ao remover equipe';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } else {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch (err) {
+          errorMessage = `Erro ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Resposta vazia (204 No Content) - não tentar fazer parse JSON
+      return null;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 

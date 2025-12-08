@@ -174,6 +174,23 @@ CREATE INDEX IF NOT EXISTS idx_ruas_conexoes_destino ON ruas_conexoes(id_bairro_
 
 -- Índices para ambulâncias
 CREATE INDEX IF NOT EXISTS idx_ambulancias_bairro ON ambulancias(id_bairro_base);
+
+-- Índices únicos para garantir unicidade de telefone/contato
+-- Profissionais: contato deve ser único (apenas para valores não nulos e não vazios)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_profissionais_contato_unique') THEN
+        CREATE UNIQUE INDEX idx_profissionais_contato_unique ON profissionais(contato) WHERE contato IS NOT NULL AND contato != '';
+    END IF;
+END $$;
+
+-- Usuários: telefone deve ser único (apenas para valores não nulos e não vazios)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_usuarios_telefone_unique') THEN
+        CREATE UNIQUE INDEX idx_usuarios_telefone_unique ON usuarios(telefone) WHERE telefone IS NOT NULL AND telefone != '';
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_ambulancias_status ON ambulancias(status);
 CREATE INDEX IF NOT EXISTS idx_ambulancias_tipo ON ambulancias(tipo);
 

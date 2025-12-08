@@ -24,15 +24,16 @@ function HistoricoOcorrencia({ ocorrenciaId, atualizarEmTempoReal = true, status
         setHistoricos(dados);
         setError(null);
         
-        // Verificar se ocorrência está concluída e se há histórico de retorno
+        // Verificar se ocorrência está concluída e se há histórico de retorno definitivo
         // Se sim, parar atualizações
-        const temRetorno = dados && dados.some(h => 
+        const temRetornoDefinitivo = dados && dados.some(h => 
           (h.acao === 'ALTERACAO_STATUS' || h.acao === 'CONCLUSAO') && 
           h.acaoAmbulancia && 
           (h.acaoAmbulancia.includes('Retornou') || h.acaoAmbulancia.includes('retornou'))
         );
         
-        if (statusOcorrencia === 'CONCLUIDA' && temRetorno && interval) {
+        // Parar atualizações apenas quando realmente retornou (não apenas "voltando")
+        if (statusOcorrencia === 'CONCLUIDA' && temRetornoDefinitivo && interval) {
           clearInterval(interval);
           interval = null;
         }
@@ -60,9 +61,10 @@ function HistoricoOcorrencia({ ocorrenciaId, atualizarEmTempoReal = true, status
           (h.acaoAmbulancia.includes('Retornou') || h.acaoAmbulancia.includes('retornou'))
         );
         
-        // Só iniciar intervalo se ainda não retornou
+        // Continuar atualizando se está concluída mas ainda não retornou (pode ter "voltando para base")
+        // Só parar quando realmente retornou
         if (!(statusOcorrencia === 'CONCLUIDA' && temRetorno)) {
-          interval = setInterval(carregarHistorico, 5000); // Aumentado para 5 segundos para reduzir refresh
+          interval = setInterval(carregarHistorico, 3000); // 3 segundos para atualizar mais frequentemente durante retorno
         }
       });
     }

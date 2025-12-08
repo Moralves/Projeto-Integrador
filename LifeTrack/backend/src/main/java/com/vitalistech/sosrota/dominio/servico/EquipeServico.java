@@ -104,6 +104,13 @@ public class EquipeServico {
         equipe.setAtiva(true);
         equipeRepositorio.save(equipe);
 
+        // Ativar a ambulância quando uma equipe é criada
+        ambulancia.setAtiva(true);
+        if (ambulancia.getStatus() == com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia.INATIVA) {
+            ambulancia.setStatus(com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia.DISPONIVEL);
+        }
+        ambulanciaRepositorio.save(ambulancia);
+
         for (Long idProf : idsProfissionais) {
             Profissional p = profissionalRepositorio.findById(idProf)
                     .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
@@ -259,5 +266,39 @@ public class EquipeServico {
         }
 
         return equipeRepositorio.save(equipe);
+    }
+
+    /**
+     * Remove (desativa) uma equipe vinculada a uma ambulância.
+     * Atualiza o status dos profissionais para DISPONIVEL.
+     */
+    @Transactional
+    public void removerEquipePorAmbulancia(Long idAmbulancia) {
+        Equipe equipe = equipeRepositorio.findEquipeAtivaPorAmbulancia(idAmbulancia)
+                .orElseThrow(() -> new IllegalStateException("Não há equipe ativa vinculada a esta ambulância"));
+
+        // Verificar se a equipe está em atendimento
+        if (equipeEmAtendimento(equipe.getId())) {
+            throw new IllegalStateException("Não é possível remover uma equipe que está em atendimento. Finalize o atendimento antes.");
+        }
+
+        // Atualizar status dos profissionais para DISPONIVEL
+        for (EquipeProfissional ep : equipe.getProfissionais()) {
+            Profissional p = ep.getProfissional();
+            if (p.getStatus() == StatusProfissional.DISPONIVEL || p.getStatus() == StatusProfissional.EM_ATENDIMENTO) {
+                p.setStatus(StatusProfissional.DISPONIVEL);
+                profissionalRepositorio.save(p);
+            }
+        }
+
+        // Desativar a equipe (soft delete)
+        equipe.setAtiva(false);
+        equipeRepositorio.save(equipe);
+
+        // Desativar a ambulância quando a equipe é removida
+        Ambulancia ambulancia = equipe.getAmbulancia();
+        ambulancia.setAtiva(false);
+        ambulancia.setStatus(com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia.INATIVA);
+        ambulanciaRepositorio.save(ambulancia);
     }
 }

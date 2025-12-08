@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usuarioService } from '../../../services/usuarioService';
+import { formatarTelefone, removerFormatacaoTelefone, validarTelefone } from '../../../utils/telefoneUtils';
 import '../AdminDashboard.css';
 
 function GerenciarUsuarios() {
@@ -41,7 +42,7 @@ function GerenciarUsuarios() {
         password: '',
         nome: usuario.nome,
         email: usuario.email,
-        telefone: usuario.telefone || '',
+        telefone: usuario.telefone ? formatarTelefone(usuario.telefone) : '',
       });
     } else {
       setEditingUsuario(null);
@@ -64,6 +65,7 @@ function GerenciarUsuarios() {
       password: '',
       nome: '',
       email: '',
+      telefone: '',
     });
   };
 
@@ -72,20 +74,44 @@ function GerenciarUsuarios() {
     try {
       setError('');
       
+      // Validar telefone antes de enviar
+      if (formData.telefone && !validarTelefone(formData.telefone)) {
+        setError('Telefone inválido. Use o formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX');
+        return;
+      }
+      
       if (editingUsuario) {
-        await usuarioService.atualizarUsuario(editingUsuario.id, formData);
+        if (!formData.telefone) {
+          setError('Telefone é obrigatório');
+          return;
+        }
+        // Remover formatação antes de enviar ao backend
+        const dadosEnvio = {
+          ...formData,
+          telefone: removerFormatacaoTelefone(formData.telefone)
+        };
+        await usuarioService.atualizarUsuario(editingUsuario.id, dadosEnvio);
       } else {
         if (!formData.password) {
           setError('Senha é obrigatória para novos usuários');
           return;
         }
-        await usuarioService.criarUsuario(formData);
+        if (!formData.telefone) {
+          setError('Telefone é obrigatório');
+          return;
+        }
+        // Remover formatação antes de enviar ao backend
+        const dadosEnvio = {
+          ...formData,
+          telefone: removerFormatacaoTelefone(formData.telefone)
+        };
+        await usuarioService.criarUsuario(dadosEnvio);
       }
       
       handleCloseModal();
       carregarUsuarios();
     } catch (err) {
-      setError('Erro ao salvar usuário: ' + err.message);
+      setError(err.message || 'Erro ao salvar usuário');
     }
   };
 
@@ -154,7 +180,7 @@ function GerenciarUsuarios() {
                     <td>{usuario.username}</td>
                     <td>{usuario.nome}</td>
                     <td>{usuario.email}</td>
-                    <td>{usuario.telefone || '-'}</td>
+                    <td>{usuario.telefone ? formatarTelefone(usuario.telefone) : '-'}</td>
                     <td>
                       <span className="role-badge">
                         {usuario.roles && usuario.roles.length > 0 
@@ -244,10 +270,22 @@ function GerenciarUsuarios() {
                 <input
                   type="tel"
                   value={formData.telefone}
-                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                  onChange={(e) => {
+                    const valorFormatado = formatarTelefone(e.target.value);
+                    setFormData({ ...formData, telefone: valorFormatado });
+                  }}
+                  onBlur={(e) => {
+                    // Garantir formatação ao sair do campo
+                    const valorFormatado = formatarTelefone(e.target.value);
+                    setFormData({ ...formData, telefone: valorFormatado });
+                  }}
                   required
-                  placeholder="(00) 00000-0000"
+                  placeholder="(11) 99999-1111"
+                  maxLength={15}
                 />
+                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                  Formato: (XX) XXXXX-XXXX para celular ou (XX) XXXX-XXXX para fixo
+                </small>
               </div>
               {error && <div className="form-error">{error}</div>}
               <div className="modal-actions">

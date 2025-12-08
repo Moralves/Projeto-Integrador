@@ -17,4 +17,10 @@ public interface EquipeRepositorio extends JpaRepository<Equipe, Long> {
 
     @Query("SELECT e FROM Equipe e WHERE e.ativa = true AND e.ambulancia.status = com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia.DISPONIVEL")
     List<Equipe> equipesDisponiveis();
+
+    @Query("SELECT e FROM Equipe e JOIN e.profissionais ep WHERE ep.profissional.id = :idProfissional AND e.ativa = true")
+    Optional<Equipe> findEquipeAtivaPorProfissional(Long idProfissional);
+
+    @Query("SELECT e FROM Equipe e WHERE e.ambulancia.id = :idAmbulancia AND e.ativa = true")
+    Optional<Equipe> findEquipeAtivaPorAmbulancia(Long idAmbulancia);
 }

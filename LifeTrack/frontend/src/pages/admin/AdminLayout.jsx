@@ -12,8 +12,8 @@ function AdminLayout({ onLogout }) {
 
   const menuItems = [
     { id: 'usuarios', label: 'Usuários', icon: '👥' },
-    { id: 'equipes', label: 'Equipes', icon: '👨‍👩‍👧‍👦' },
-    { id: 'funcionarios', label: 'Funcionários', icon: '👤' },
+    { id: 'equipes', label: 'Equipes', icon: '🤝' },
+    { id: 'funcionarios', label: 'Funcionários', icon: '👔' },
     { id: 'ambulancias', label: 'Ambulâncias', icon: '🚑' },
     { id: 'analise', label: 'Análise Estratégica', icon: '📊' },
     { id: 'relatorios', label: 'Relatórios', icon: '📈' },
@@ -65,9 +65,8 @@ function AdminLayout({ onLogout }) {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <button className="nav-item logout-btn" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
-            <span className="nav-label">Sair</span>
+          <button className="logout-btn" onClick={handleLogout}>
+            Sair
           </button>
         </div>
       </aside>

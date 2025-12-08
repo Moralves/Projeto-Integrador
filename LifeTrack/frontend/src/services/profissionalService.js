@@ -82,8 +82,22 @@ export const profissionalService = {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Erro ao cadastrar profissional');
+        let errorMessage = 'Erro ao cadastrar profissional';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } else {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch (err) {
+          errorMessage = `Erro ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       return await response.json();
@@ -155,6 +169,7 @@ export const profissionalService = {
         throw new Error(errorMessage);
       }
 
+      // Retorna Profissional, então precisa fazer parse JSON
       return await response.json();
     } catch (error) {
       throw error;
@@ -189,7 +204,8 @@ export const profissionalService = {
         throw new Error(errorMessage);
       }
 
-      return await response.json();
+      // Resposta vazia (204 No Content) - não tentar fazer parse JSON
+      return null;
     } catch (error) {
       throw error;
     }

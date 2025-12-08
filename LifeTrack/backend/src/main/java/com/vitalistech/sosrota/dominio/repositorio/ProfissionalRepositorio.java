@@ -23,4 +23,20 @@ public interface ProfissionalRepositorio extends JpaRepository<Profissional, Lon
      * Busca profissionais ativos disponíveis.
      */
     List<Profissional> findByStatusAndAtivoTrueOrderByNome(StatusProfissional status);
+    
+    /**
+     * Verifica se existe profissional com o contato (telefone) especificado.
+     * @param contato Número de telefone/contato
+     * @return Optional com o profissional se encontrado
+     */
+    java.util.Optional<Profissional> findByContato(String contato);
+    
+    /**
+     * Verifica se existe profissional com o contato (telefone) especificado, excluindo um ID específico.
+     * Útil para validação ao editar.
+     * @param contato Número de telefone/contato
+     * @param id ID do profissional a excluir da busca
+     * @return Optional com o profissional se encontrado
+     */
+    java.util.Optional<Profissional> findByContatoAndIdNot(String contato, Long id);
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ambulanciaService } from '../../../services/ambulanciaService';
 import { bairroService } from '../../../services/bairroService';
 import { analiseEstrategicaService } from '../../../services/analiseEstrategicaService';
+import { equipeService } from '../../../services/equipeService';
 import AutocompleteSelect from '../../../components/AutocompleteSelect';
 import '../AdminDashboard.css';
 
@@ -14,6 +15,7 @@ function GerenciarAmbulancias() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [ambulanciasEmAtendimento, setAmbulanciasEmAtendimento] = useState(new Set());
+  const [equipesVinculadas, setEquipesVinculadas] = useState(new Map()); // { idAmbulancia: equipe }
   const [formData, setFormData] = useState({
     placa: '',
     tipo: 'BASICA',
@@ -39,6 +41,16 @@ function GerenciarAmbulancias() {
       setLoading(true);
       const data = await ambulanciaService.listar();
       setAmbulancias(data);
+      
+      // Carregar equipes para verificar vínculos
+      const equipes = await equipeService.listarEquipes();
+      const equipesMap = new Map();
+      equipes.forEach(equipe => {
+        if (equipe.ativa && equipe.ambulancia) {
+          equipesMap.set(equipe.ambulancia.id, equipe);
+        }
+      });
+      setEquipesVinculadas(equipesMap);
       
       // Verificar quais ambulâncias estão em atendimento
       const emAtendimentoSet = new Set();
@@ -139,6 +151,12 @@ function GerenciarAmbulancias() {
         setError('Não é possível alterar status de ambulância em atendimento. Finalize o atendimento antes.');
         return;
       }
+
+      // Se tentando desativar, verificar se há equipe vinculada
+      if (ativa && equipesVinculadas.has(id)) {
+        setError('Não é possível desativar uma ambulância que possui equipe vinculada. Remova a equipe antes de desativar.');
+        return;
+      }
       
       if (ativa) {
         await ambulanciaService.desativar(id);
@@ -148,6 +166,20 @@ function GerenciarAmbulancias() {
       carregarAmbulancias();
     } catch (err) {
       setError(err.message || 'Erro ao alterar status: ' + err.message);
+    }
+  };
+
+  const handleRemoverEquipe = async (idAmbulancia, idEquipe) => {
+    if (!window.confirm('Tem certeza que deseja remover a equipe vinculada a esta ambulância?')) {
+      return;
+    }
+    
+    try {
+      setError('');
+      await equipeService.removerEquipePorAmbulancia(idAmbulancia);
+      carregarAmbulancias();
+    } catch (err) {
+      setError('Erro ao remover equipe: ' + err.message);
     }
   };
 
@@ -174,6 +206,7 @@ function GerenciarAmbulancias() {
                 <th>Tipo</th>
                 <th>Status</th>
                 <th>Bairro Base</th>
+                <th>Equipe</th>
                 <th>Ativa</th>
                 <th>Ações</th>
               </tr>
@@ -181,40 +214,76 @@ function GerenciarAmbulancias() {
             <tbody>
               {ambulancias.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="empty-message">
+                  <td colSpan="8" className="empty-message">
                     Nenhuma ambulância cadastrada
                   </td>
                 </tr>
               ) : (
                 ambulancias.map((amb) => {
                   const emAtendimento = ambulanciasEmAtendimento.has(amb.id) || amb.status === 'EM_ATENDIMENTO';
+                  const equipe = equipesVinculadas.get(amb.id);
+                  const temEquipe = equipe != null;
+                  const podeDesativar = !emAtendimento && !temEquipe;
+                  
                   return (
                     <tr key={amb.id}>
                       <td>{amb.id}</td>
                       <td>{amb.placa}</td>
                       <td>{amb.tipo}</td>
                       <td>
-                        <span className={`status-badge ${amb.status === 'EM_ATENDIMENTO' ? 'em-atendimento' : 'ativo'}`}>
+                        <span className={`status-badge ${
+                          amb.status === 'EM_ATENDIMENTO' ? 'em-atendimento' : 
+                          amb.status === 'INATIVA' ? 'inativo' : 
+                          'ativo'
+                        }`}>
                           {amb.status}
                           {emAtendimento && ' 🚨'}
                         </span>
                       </td>
                       <td>{amb.bairroBase?.nome || 'N/A'}</td>
                       <td>
+                        {temEquipe ? (
+                          <div className="equipe-info">
+                            <span className="equipe-nome">
+                              {equipe.descricao}
+                            </span>
+                            {equipe.profissionais && equipe.profissionais.length > 0 && (
+                              <small className="equipe-profissionais">
+                                {equipe.profissionais.length} profissional{equipe.profissionais.length !== 1 ? 'is' : ''}
+                              </small>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="equipe-vazia">Sem equipe</span>
+                        )}
+                      </td>
+                      <td>
                         <span className={`status-badge ${amb.ativa ? 'ativo' : 'inativo'}`}>
                           {amb.ativa ? 'Sim' : 'Não'}
                         </span>
                       </td>
                       <td className="actions">
+                        {temEquipe && (
+                          <button
+                            className="btn-remover-equipe"
+                            onClick={() => handleRemoverEquipe(amb.id, equipe.id)}
+                            disabled={emAtendimento}
+                            title={emAtendimento ? 'Não é possível remover equipe de ambulância em atendimento' : 'Remover equipe vinculada'}
+                          >
+                            Remover Equipe
+                          </button>
+                        )}
                         <button
                           className={`btn-toggle ${amb.ativa ? 'desativar' : 'ativar'}`}
                           onClick={() => handleToggleStatus(amb.id, amb.ativa)}
-                          disabled={emAtendimento}
-                          style={{
-                            opacity: emAtendimento ? 0.5 : 1,
-                            cursor: emAtendimento ? 'not-allowed' : 'pointer'
-                          }}
-                          title={emAtendimento ? 'Não é possível alterar status de ambulância em atendimento. Finalize o atendimento antes.' : ''}
+                          disabled={!podeDesativar && amb.ativa}
+                          title={
+                            emAtendimento 
+                              ? 'Não é possível alterar status de ambulância em atendimento. Finalize o atendimento antes.' 
+                              : temEquipe && amb.ativa
+                              ? 'Não é possível desativar uma ambulância que possui equipe vinculada. Remova a equipe antes de desativar.'
+                              : ''
+                          }
                         >
                           {amb.ativa ? 'Desativar' : 'Ativar'}
                         </button>

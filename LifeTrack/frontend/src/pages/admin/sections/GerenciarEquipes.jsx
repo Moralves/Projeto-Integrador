@@ -264,6 +264,25 @@ function GerenciarEquipes() {
                         </option>
                       ))}
                   </select>
+                  {formData.idAmbulancia && (() => {
+                    const ambulanciaSelecionada = ambulancias.find(a => a.id.toString() === formData.idAmbulancia);
+                    if (ambulanciaSelecionada && ambulanciaSelecionada.bairroBase) {
+                      return (
+                        <div style={{
+                          marginTop: '8px',
+                          padding: '10px',
+                          backgroundColor: '#e7f3ff',
+                          border: '1px solid #b3d9ff',
+                          borderRadius: '4px',
+                          fontSize: '0.9rem',
+                          color: '#004085'
+                        }}>
+                          <strong>📍 Posicionamento:</strong> {ambulanciaSelecionada.bairroBase.nome || 'N/A'}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               )}
               {editingEquipe && (

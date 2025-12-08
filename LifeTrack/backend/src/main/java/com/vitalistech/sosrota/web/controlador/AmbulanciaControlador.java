@@ -6,6 +6,7 @@ import com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia;
 import com.vitalistech.sosrota.dominio.repositorio.AmbulanciaRepositorio;
 import com.vitalistech.sosrota.dominio.repositorio.AtendimentoRepositorio;
 import com.vitalistech.sosrota.dominio.repositorio.BairroRepositorio;
+import com.vitalistech.sosrota.dominio.repositorio.EquipeRepositorio;
 import com.vitalistech.sosrota.web.dto.CriarAmbulanciaDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -24,13 +25,16 @@ public class AmbulanciaControlador {
     private final AmbulanciaRepositorio ambulanciaRepositorio;
     private final BairroRepositorio bairroRepositorio;
     private final AtendimentoRepositorio atendimentoRepositorio;
+    private final EquipeRepositorio equipeRepositorio;
 
     public AmbulanciaControlador(AmbulanciaRepositorio ambulanciaRepositorio,
                                  BairroRepositorio bairroRepositorio,
-                                 AtendimentoRepositorio atendimentoRepositorio) {
+                                 AtendimentoRepositorio atendimentoRepositorio,
+                                 EquipeRepositorio equipeRepositorio) {
         this.ambulanciaRepositorio = ambulanciaRepositorio;
         this.bairroRepositorio = bairroRepositorio;
         this.atendimentoRepositorio = atendimentoRepositorio;
+        this.equipeRepositorio = equipeRepositorio;
     }
 
     @GetMapping
@@ -54,8 +58,9 @@ public class AmbulanciaControlador {
         ambulancia.setPlaca(dto.getPlaca());
         ambulancia.setTipo(dto.getTipo());
         ambulancia.setBairroBase(bairroBase);
-        ambulancia.setStatus(StatusAmbulancia.DISPONIVEL);
-        ambulancia.setAtiva(true);
+        // Ambulância inicia como inativa (só será ativada quando uma equipe for criada)
+        ambulancia.setStatus(StatusAmbulancia.INATIVA);
+        ambulancia.setAtiva(false);
 
         return ResponseEntity.ok(ambulanciaRepositorio.save(ambulancia));
     }
@@ -119,6 +124,15 @@ public class AmbulanciaControlador {
         if (a.getStatus() == StatusAmbulancia.EM_ATENDIMENTO) {
             throw new IllegalStateException(
                 "Não é possível desativar uma ambulância com status EM_ATENDIMENTO. Finalize o atendimento antes.");
+        }
+        
+        // Verificar se há equipe vinculada
+        java.util.Optional<com.vitalistech.sosrota.dominio.modelo.Equipe> equipeOpt = 
+            equipeRepositorio.findEquipeAtivaPorAmbulancia(id);
+        
+        if (equipeOpt.isPresent()) {
+            throw new IllegalStateException(
+                "Não é possível desativar uma ambulância que possui equipe vinculada. Remova a equipe antes de desativar.");
         }
         
         a.setAtiva(false);

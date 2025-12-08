@@ -25,6 +25,7 @@ public class TimerOcorrenciaDTO {
     private Long tempoAposChegadaMinutos; // Desde a chegada até agora (se chegou)
     private Long tempoRetornoMinutos; // Tempo de retorno (igual ao tempo de deslocamento até chegada)
     private Long tempoRetornoDecorridoMinutos; // Tempo decorrido desde chegada até retorno (se retornou)
+    private Long tempoRestanteRetornoMinutos; // Tempo restante de retorno (DECRESCENTE)
     private Boolean retornouBase; // Se a ambulância já retornou à base
     
     // SLA
@@ -274,6 +275,14 @@ public class TimerOcorrenciaDTO {
 
     public void setRetornouBase(Boolean retornouBase) {
         this.retornouBase = retornouBase;
+    }
+
+    public Long getTempoRestanteRetornoMinutos() {
+        return tempoRestanteRetornoMinutos;
+    }
+
+    public void setTempoRestanteRetornoMinutos(Long tempoRestanteRetornoMinutos) {
+        this.tempoRestanteRetornoMinutos = tempoRestanteRetornoMinutos;
     }
 }
 
