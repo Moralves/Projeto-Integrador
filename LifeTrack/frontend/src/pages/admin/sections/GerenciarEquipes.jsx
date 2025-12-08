@@ -262,7 +262,15 @@ function GerenciarEquipes() {
                   >
                     <option value="">Selecione uma ambulância</option>
                     {ambulancias
-                      .filter(a => a.ativa && a.status === 'DISPONIVEL')
+                      .filter(a => {
+                        // Filtrar apenas ambulâncias ativas e disponíveis
+                        if (!a.ativa || a.status !== 'DISPONIVEL') return false;
+                        // Verificar se a ambulância já possui uma equipe ativa
+                        const temEquipeAtiva = equipes.some(e => 
+                          e.ativa && e.ambulancia && e.ambulancia.id === a.id
+                        );
+                        return !temEquipeAtiva;
+                      })
                       .map(amb => (
                         <option key={amb.id} value={amb.id}>
                           {amb.placa} - {amb.tipo}
@@ -316,7 +324,19 @@ function GerenciarEquipes() {
                       >
                         <option value="">Selecione uma ambulância</option>
                         {ambulancias
-                          .filter(a => a.ativa && a.status === 'DISPONIVEL')
+                          .filter(a => {
+                            // Filtrar apenas ambulâncias ativas e disponíveis
+                            if (!a.ativa || a.status !== 'DISPONIVEL') return false;
+                            // Verificar se a ambulância já possui uma equipe ativa
+                            // Exceto se for a própria ambulância da equipe que está sendo editada
+                            const temEquipeAtiva = equipes.some(e => 
+                              e.ativa && 
+                              e.ambulancia && 
+                              e.ambulancia.id === a.id &&
+                              (!editingEquipe || e.id !== editingEquipe.id)
+                            );
+                            return !temEquipeAtiva;
+                          })
                           .map(amb => (
                             <option key={amb.id} value={amb.id}>
                               {amb.placa} - {amb.tipo}

@@ -37,6 +37,11 @@ public class EquipeServico {
         Ambulancia ambulancia = ambulanciaRepositorio.findById(idAmbulancia)
                 .orElseThrow(() -> new IllegalArgumentException("Ambulância não encontrada"));
 
+        // Verificar se a ambulância já possui uma equipe ativa
+        if (equipeRepositorio.findEquipeAtivaPorAmbulancia(idAmbulancia).isPresent()) {
+            throw new IllegalStateException("A ambulância selecionada já possui uma equipe ativa vinculada");
+        }
+
         TipoAmbulancia tipo = ambulancia.getTipo();
 
         boolean temCondutor = false;
