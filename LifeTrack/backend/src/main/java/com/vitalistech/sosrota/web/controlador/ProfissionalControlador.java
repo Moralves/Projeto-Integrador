@@ -186,7 +186,8 @@ public class ProfissionalControlador {
         }
 
         p.setNome(dto.getNome());
-        p.setFuncao(dto.getFuncao());
+        // Não permitir alterar a função durante a edição - manter a função original
+        // p.setFuncao(dto.getFuncao()); // Comentado: função não pode ser alterada após cadastro
         p.setTurno(dto.getTurno());
         p.setStatus(dto.getStatus());
         p.setAtivo(dto.getAtivo());

@@ -51,7 +51,8 @@ public class EquipeControlador {
         Equipe equipe = equipeServico.atualizarEquipe(
                 id,
                 dto.getDescricao(),
-                dto.getIdsProfissionais()
+                dto.getIdsProfissionais(),
+                dto.getIdAmbulancia() // Permitir alterar ambulância para equipes inativas
         );
         return ResponseEntity.ok(equipe);
     }

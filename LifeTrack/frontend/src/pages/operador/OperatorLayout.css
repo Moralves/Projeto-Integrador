@@ -65,6 +65,13 @@
 
 .logout-btn {
   color: rgba(255, 255, 255, 0.85) !important;
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+.logout-btn .nav-label {
+  width: 100%;
+  text-align: center;
 }
 
 .logout-btn:hover {

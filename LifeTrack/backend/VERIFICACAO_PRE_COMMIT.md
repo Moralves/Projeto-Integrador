@@ -108,3 +108,4 @@ ALTER SEQUENCE IF EXISTS atendimento_rota_conexao_id_seq RESTART WITH 1;
 **Pode commitar com segurança!** 🎉
 
 
+

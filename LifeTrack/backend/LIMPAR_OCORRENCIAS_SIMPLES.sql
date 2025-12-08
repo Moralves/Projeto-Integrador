@@ -21,3 +21,4 @@ ALTER SEQUENCE IF EXISTS historico_ocorrencias_id_seq RESTART WITH 1;
 ALTER SEQUENCE IF EXISTS atendimento_rota_conexao_id_seq RESTART WITH 1;
 
 
+

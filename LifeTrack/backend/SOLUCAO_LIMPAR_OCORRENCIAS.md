@@ -129,3 +129,4 @@ Após a limpeza, **TODOS** estes dados são mantidos:
 **Use sempre o `LIMPAR_OCORRENCIAS_ALTERNATIVO.sql`** - é mais rápido e confiável!
 
 
+

@@ -65,8 +65,8 @@ function AdminLayout({ onLogout }) {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <button className="logout-btn" onClick={handleLogout}>
-            Sair
+          <button className="nav-item logout-btn" onClick={handleLogout}>
+            <span className="nav-label">Sair</span>
           </button>
         </div>
       </aside>

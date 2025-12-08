@@ -9,8 +9,7 @@ import java.util.List;
  */
 public class CriarEquipeDTO {
 
-    @NotNull
-    private Long idAmbulancia;
+    private Long idAmbulancia; // Opcional para atualização de equipes inativas
 
     @NotNull
     private String descricao;

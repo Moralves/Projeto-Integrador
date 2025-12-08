@@ -141,20 +141,55 @@ public class EquipeServico {
 
     /**
      * Atualiza uma equipe existente.
-     * Permite alterar descrição e profissionais, mas não a ambulância.
+     * Permite alterar descrição, profissionais e ambulância (se equipe inativa).
+     * Se equipe inativa receber uma ambulância, ela será reativada.
      */
     @Transactional
-    public Equipe atualizarEquipe(Long idEquipe, String descricao, List<Long> idsProfissionais) {
+    public Equipe atualizarEquipe(Long idEquipe, String descricao, List<Long> idsProfissionais, Long idAmbulancia) {
         Equipe equipe = equipeRepositorio.findById(idEquipe)
                 .orElseThrow(() -> new IllegalArgumentException("Equipe não encontrada"));
 
-        if (!equipe.isAtiva()) {
-            throw new IllegalStateException("Não é possível editar uma equipe inativa");
-        }
-
-        // Verificar se a equipe está em atendimento
-        if (equipeEmAtendimento(idEquipe)) {
+        // Verificar se a equipe está em atendimento (só para equipes ativas)
+        if (equipe.isAtiva() && equipeEmAtendimento(idEquipe)) {
             throw new IllegalStateException("Não é possível editar uma equipe que está em atendimento");
+        }
+        
+        // Verificar se equipe está inativa e se está recebendo uma ambulância para reativar
+        boolean equipeEraInativa = !equipe.isAtiva();
+        boolean seraReativada = equipeEraInativa && idAmbulancia != null;
+        
+        // Permitir alterar ambulância apenas se equipe estava inativa
+        if (equipeEraInativa && idAmbulancia != null) {
+            Ambulancia novaAmbulancia = ambulanciaRepositorio.findById(idAmbulancia)
+                    .orElseThrow(() -> new IllegalArgumentException("Ambulância não encontrada"));
+            
+            // Verificar se a nova ambulância já tem uma equipe ativa
+            if (equipeRepositorio.findEquipeAtivaPorAmbulancia(idAmbulancia).isPresent()) {
+                throw new IllegalStateException("A ambulância selecionada já possui uma equipe ativa vinculada");
+            }
+            
+            // Desvincular da ambulância antiga se houver
+            Ambulancia ambulanciaAntiga = equipe.getAmbulancia();
+            if (ambulanciaAntiga != null && !ambulanciaAntiga.getId().equals(idAmbulancia)) {
+                // Verificar se a ambulância antiga não tem mais equipes ativas
+                if (!equipeRepositorio.findEquipeAtivaPorAmbulancia(ambulanciaAntiga.getId()).isPresent()) {
+                    ambulanciaAntiga.setAtiva(false);
+                    ambulanciaAntiga.setStatus(com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia.INATIVA);
+                    ambulanciaRepositorio.save(ambulanciaAntiga);
+                }
+            }
+            
+            equipe.setAmbulancia(novaAmbulancia);
+            
+            // Ativar a nova ambulância
+            novaAmbulancia.setAtiva(true);
+            if (novaAmbulancia.getStatus() == com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia.INATIVA) {
+                novaAmbulancia.setStatus(com.vitalistech.sosrota.dominio.modelo.StatusAmbulancia.DISPONIVEL);
+            }
+            ambulanciaRepositorio.save(novaAmbulancia);
+            
+            // Reativar a equipe após vincular a ambulância
+            equipe.setAtiva(true);
         }
 
         // Atualizar descrição
@@ -217,12 +252,21 @@ public class EquipeServico {
                 }
 
                 // Verificar se profissional já está em outra equipe ativa
-                if (equipeRepositorio.profissionalEmEquipeAtiva(idProf) > 0) {
+                // Se a equipe será reativada, verificar antes de marcar como ativa
+                // Se a equipe já está ativa, verificar normalmente
+                if (seraReativada || equipe.isAtiva()) {
                     // Verificar se não é da mesma equipe
                     boolean estaNestaEquipe = equipe.getProfissionais().stream()
                             .anyMatch(ep -> ep.getProfissional().getId().equals(idProf));
+                    
+                    // Se não está nesta equipe, verificar se está em outra equipe ativa
                     if (!estaNestaEquipe) {
-                        throw new IllegalStateException("Profissional " + p.getNome() + " já está em outra equipe ativa.");
+                        // Contar quantas equipes ativas têm esse profissional
+                        // Se a equipe atual será reativada, precisamos contar ela também
+                        long contagem = equipeRepositorio.profissionalEmEquipeAtiva(idProf);
+                        if (contagem > 0) {
+                            throw new IllegalStateException("Profissional " + p.getNome() + " já está em outra equipe ativa.");
+                        }
                     }
                 }
 
@@ -239,29 +283,31 @@ public class EquipeServico {
             }
         }
 
-        // Validar composição da equipe após atualização
+        // Validar composição da equipe após atualização (só se tiver ambulância)
         Ambulancia ambulancia = equipe.getAmbulancia();
-        TipoAmbulancia tipo = ambulancia.getTipo();
-        boolean temCondutor = false;
-        boolean temEnfermeiro = false;
-        boolean temMedico = false;
+        if (ambulancia != null) {
+            TipoAmbulancia tipo = ambulancia.getTipo();
+            boolean temCondutor = false;
+            boolean temEnfermeiro = false;
+            boolean temMedico = false;
 
-        for (EquipeProfissional ep : equipe.getProfissionais()) {
-            Profissional p = ep.getProfissional();
-            if (p.getFuncao() == FuncaoProfissional.CONDUTOR) temCondutor = true;
-            if (p.getFuncao() == FuncaoProfissional.ENFERMEIRO) temEnfermeiro = true;
-            if (p.getFuncao() == FuncaoProfissional.MEDICO) temMedico = true;
-        }
-
-        if (tipo == TipoAmbulancia.BASICA) {
-            if (!temCondutor || !temEnfermeiro) {
-                throw new IllegalStateException("Equipe de ambulância BÁSICA deve ter Condutor e Enfermeiro.");
+            for (EquipeProfissional ep : equipe.getProfissionais()) {
+                Profissional p = ep.getProfissional();
+                if (p.getFuncao() == FuncaoProfissional.CONDUTOR) temCondutor = true;
+                if (p.getFuncao() == FuncaoProfissional.ENFERMEIRO) temEnfermeiro = true;
+                if (p.getFuncao() == FuncaoProfissional.MEDICO) temMedico = true;
             }
-        }
 
-        if (tipo == TipoAmbulancia.UTI) {
-            if (!temCondutor || !temEnfermeiro || !temMedico) {
-                throw new IllegalStateException("Equipe de ambulância UTI deve ter Condutor, Enfermeiro e Médico.");
+            if (tipo == TipoAmbulancia.BASICA) {
+                if (!temCondutor || !temEnfermeiro) {
+                    throw new IllegalStateException("Equipe de ambulância BÁSICA deve ter Condutor e Enfermeiro.");
+                }
+            }
+
+            if (tipo == TipoAmbulancia.UTI) {
+                if (!temCondutor || !temEnfermeiro || !temMedico) {
+                    throw new IllegalStateException("Equipe de ambulância UTI deve ter Condutor, Enfermeiro e Médico.");
+                }
             }
         }
 

@@ -100,6 +100,10 @@ function GerenciarEquipes() {
       
       if (editingEquipe) {
         // Atualizar equipe existente
+        // Se equipe está inativa e foi selecionada uma ambulância, incluir no DTO
+        if (!editingEquipe.ativa && formData.idAmbulancia) {
+          dados.idAmbulancia = parseInt(formData.idAmbulancia);
+        }
         await equipeService.atualizarEquipe(editingEquipe.id, dados);
       } else {
         // Criar nova equipe
@@ -177,7 +181,8 @@ function GerenciarEquipes() {
               ) : (
                 equipes.map((equipe) => {
                   const emAtendimento = equipesStatus[equipe.id] || false;
-                  const podeEditar = equipe.ativa && !emAtendimento;
+                  // Permitir editar equipes inativas (para poder adicionar ambulância) ou equipes ativas que não estão em atendimento
+                  const podeEditar = !equipe.ativa || (equipe.ativa && !emAtendimento);
                   
                   return (
                     <tr key={equipe.id}>
@@ -208,8 +213,8 @@ function GerenciarEquipes() {
                         <button
                           className="btn-secondary"
                           onClick={() => handleEdit(equipe)}
-                          disabled={!podeEditar}
-                          title={!podeEditar ? (emAtendimento ? 'Equipe em atendimento não pode ser editada' : 'Equipe inativa não pode ser editada') : 'Editar equipe'}
+                          disabled={emAtendimento}
+                          title={emAtendimento ? 'Equipe em atendimento não pode ser editada' : 'Editar equipe'}
                           style={{
                             padding: '6px 12px',
                             fontSize: '0.875rem',
@@ -287,16 +292,42 @@ function GerenciarEquipes() {
               )}
               {editingEquipe && (
                 <div className="form-group">
-                  <label>Ambulância</label>
-                  <input
-                    type="text"
-                    value={editingEquipe.ambulancia?.placa || 'N/A'}
-                    disabled
-                    style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
-                  />
-                  <small style={{ color: '#6c757d', display: 'block', marginTop: '4px' }}>
-                    A ambulância não pode ser alterada após a criação da equipe
-                  </small>
+                  <label>Ambulância {!editingEquipe.ativa ? '(Obrigatória para reativar equipe)' : ''}</label>
+                  {editingEquipe.ativa ? (
+                    // Se equipe está ativa, mostrar campo desabilitado
+                    <>
+                      <input
+                        type="text"
+                        value={editingEquipe.ambulancia?.placa || 'N/A'}
+                        disabled
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                      />
+                      <small style={{ color: '#6c757d', display: 'block', marginTop: '4px' }}>
+                        A ambulância não pode ser alterada enquanto a equipe estiver ativa
+                      </small>
+                    </>
+                  ) : (
+                    // Se equipe está inativa, permitir selecionar ambulância
+                    <>
+                      <select
+                        value={formData.idAmbulancia}
+                        onChange={(e) => setFormData({ ...formData, idAmbulancia: e.target.value })}
+                        required={!editingEquipe.ativa}
+                      >
+                        <option value="">Selecione uma ambulância</option>
+                        {ambulancias
+                          .filter(a => a.ativa && a.status === 'DISPONIVEL')
+                          .map(amb => (
+                            <option key={amb.id} value={amb.id}>
+                              {amb.placa} - {amb.tipo}
+                            </option>
+                          ))}
+                      </select>
+                      <small style={{ color: '#6c757d', display: 'block', marginTop: '4px' }}>
+                        Selecione uma ambulância para reativar esta equipe
+                      </small>
+                    </>
+                  )}
                 </div>
               )}
               <div className="form-group">

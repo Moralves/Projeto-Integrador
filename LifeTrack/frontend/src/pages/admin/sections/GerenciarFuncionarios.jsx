@@ -13,7 +13,7 @@ function GerenciarFuncionarios() {
   const [filtroStatus, setFiltroStatus] = useState('');
   const [formData, setFormData] = useState({
     nome: '',
-    funcao: 'MEDICO',
+    funcao: 'MEDICO', // Valor padrão - pode ser alterado no cadastro
     contato: '',
     turno: 'MANHA',
     status: 'DISPONIVEL',
@@ -97,14 +97,14 @@ function GerenciarFuncionarios() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingId(null);
-    setFormData({
-      nome: '',
-      funcao: 'MEDICO',
-      contato: '',
-      turno: 'MANHA',
-      status: 'DISPONIVEL',
-      ativo: true,
-    });
+      setFormData({
+        nome: '',
+        funcao: 'MEDICO', // Valor padrão - pode ser alterado no cadastro
+        contato: '',
+        turno: 'MANHA',
+        status: 'DISPONIVEL',
+        ativo: true,
+      });
   };
 
   const handleAlterarStatus = async (id, novoStatus) => {
@@ -323,18 +323,18 @@ function GerenciarFuncionarios() {
                   value={formData.funcao}
                   onChange={(e) => setFormData({ ...formData, funcao: e.target.value })}
                   required
-                  disabled={!editingId}
+                  disabled={!!editingId}
                   style={{
-                    backgroundColor: editingId ? '#fff' : '#f5f5f5',
-                    cursor: editingId ? 'pointer' : 'not-allowed',
-                    opacity: editingId ? 1 : 0.7
+                    backgroundColor: editingId ? '#f5f5f5' : '#fff',
+                    cursor: editingId ? 'not-allowed' : 'pointer',
+                    opacity: editingId ? 0.7 : 1
                   }}
                 >
                   <option value="MEDICO">Médico</option>
                   <option value="ENFERMEIRO">Enfermeiro</option>
                   <option value="CONDUTOR">Condutor</option>
                 </select>
-                {!editingId && (
+                {editingId && (
                   <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
                     A função não pode ser alterada após o cadastro
                   </small>

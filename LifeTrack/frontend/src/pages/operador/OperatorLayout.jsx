@@ -50,7 +50,6 @@ function OperatorLayout({ onLogout }) {
         </nav>
         <div className="sidebar-footer">
           <button className="nav-item logout-btn" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
             <span className="nav-label">Sair</span>
           </button>
         </div>

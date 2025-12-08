@@ -46,3 +46,4 @@ export const validarTelefone = (telefone) => {
   return apenasNumeros.length === 10 || apenasNumeros.length === 11;
 };
 
+
