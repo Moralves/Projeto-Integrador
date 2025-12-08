@@ -25,6 +25,8 @@ public class RelatorioOcorrenciaDTO {
     private Integer slaMinutos;
     private Boolean slaCumprido;
     private Integer tempoExcedidoMinutos;
+    private Long tempoTotalDecorridoMinutos;
+    private String tempoTotalFormatado;
 
     public RelatorioOcorrenciaDTO() {
     }
@@ -114,5 +116,11 @@ public class RelatorioOcorrenciaDTO {
 
     public Integer getTempoExcedidoMinutos() { return tempoExcedidoMinutos; }
     public void setTempoExcedidoMinutos(Integer tempoExcedidoMinutos) { this.tempoExcedidoMinutos = tempoExcedidoMinutos; }
+
+    public Long getTempoTotalDecorridoMinutos() { return tempoTotalDecorridoMinutos; }
+    public void setTempoTotalDecorridoMinutos(Long tempoTotalDecorridoMinutos) { this.tempoTotalDecorridoMinutos = tempoTotalDecorridoMinutos; }
+
+    public String getTempoTotalFormatado() { return tempoTotalFormatado; }
+    public void setTempoTotalFormatado(String tempoTotalFormatado) { this.tempoTotalFormatado = tempoTotalFormatado; }
 }
 

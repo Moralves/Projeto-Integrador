@@ -13,6 +13,7 @@ function GerenciarAmbulancias() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [ambulanciasEmAtendimento, setAmbulanciasEmAtendimento] = useState(new Set());
   const [formData, setFormData] = useState({
     placa: '',
     tipo: 'BASICA',
@@ -38,6 +39,21 @@ function GerenciarAmbulancias() {
       setLoading(true);
       const data = await ambulanciaService.listar();
       setAmbulancias(data);
+      
+      // Verificar quais ambulâncias estão em atendimento
+      const emAtendimentoSet = new Set();
+      for (const amb of data) {
+        try {
+          const emAtendimento = await ambulanciaService.verificarEmAtendimento(amb.id);
+          if (emAtendimento) {
+            emAtendimentoSet.add(amb.id);
+          }
+        } catch (err) {
+          console.error(`Erro ao verificar atendimento da ambulância ${amb.id}:`, err);
+        }
+      }
+      setAmbulanciasEmAtendimento(emAtendimentoSet);
+      
       setError('');
     } catch (err) {
       setError('Erro ao carregar ambulâncias: ' + err.message);
@@ -119,6 +135,11 @@ function GerenciarAmbulancias() {
 
   const handleToggleStatus = async (id, ativa) => {
     try {
+      if (ambulanciasEmAtendimento.has(id)) {
+        setError('Não é possível alterar status de ambulância em atendimento. Finalize o atendimento antes.');
+        return;
+      }
+      
       if (ativa) {
         await ambulanciaService.desativar(id);
       } else {
@@ -126,7 +147,7 @@ function GerenciarAmbulancias() {
       }
       carregarAmbulancias();
     } catch (err) {
-      setError('Erro ao alterar status: ' + err.message);
+      setError(err.message || 'Erro ao alterar status: ' + err.message);
     }
   };
 
@@ -165,30 +186,42 @@ function GerenciarAmbulancias() {
                   </td>
                 </tr>
               ) : (
-                ambulancias.map((amb) => (
-                  <tr key={amb.id}>
-                    <td>{amb.id}</td>
-                    <td>{amb.placa}</td>
-                    <td>{amb.tipo}</td>
-                    <td>
-                      <span className="status-badge ativo">{amb.status}</span>
-                    </td>
-                    <td>{amb.bairroBase?.nome || 'N/A'}</td>
-                    <td>
-                      <span className={`status-badge ${amb.ativa ? 'ativo' : 'inativo'}`}>
-                        {amb.ativa ? 'Sim' : 'Não'}
-                      </span>
-                    </td>
-                    <td className="actions">
-                      <button
-                        className={`btn-toggle ${amb.ativa ? 'desativar' : 'ativar'}`}
-                        onClick={() => handleToggleStatus(amb.id, amb.ativa)}
-                      >
-                        {amb.ativa ? 'Desativar' : 'Ativar'}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                ambulancias.map((amb) => {
+                  const emAtendimento = ambulanciasEmAtendimento.has(amb.id) || amb.status === 'EM_ATENDIMENTO';
+                  return (
+                    <tr key={amb.id}>
+                      <td>{amb.id}</td>
+                      <td>{amb.placa}</td>
+                      <td>{amb.tipo}</td>
+                      <td>
+                        <span className={`status-badge ${amb.status === 'EM_ATENDIMENTO' ? 'em-atendimento' : 'ativo'}`}>
+                          {amb.status}
+                          {emAtendimento && ' 🚨'}
+                        </span>
+                      </td>
+                      <td>{amb.bairroBase?.nome || 'N/A'}</td>
+                      <td>
+                        <span className={`status-badge ${amb.ativa ? 'ativo' : 'inativo'}`}>
+                          {amb.ativa ? 'Sim' : 'Não'}
+                        </span>
+                      </td>
+                      <td className="actions">
+                        <button
+                          className={`btn-toggle ${amb.ativa ? 'desativar' : 'ativar'}`}
+                          onClick={() => handleToggleStatus(amb.id, amb.ativa)}
+                          disabled={emAtendimento}
+                          style={{
+                            opacity: emAtendimento ? 0.5 : 1,
+                            cursor: emAtendimento ? 'not-allowed' : 'pointer'
+                          }}
+                          title={emAtendimento ? 'Não é possível alterar status de ambulância em atendimento. Finalize o atendimento antes.' : ''}
+                        >
+                          {amb.ativa ? 'Desativar' : 'Ativar'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

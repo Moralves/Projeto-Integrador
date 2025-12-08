@@ -421,6 +421,63 @@ public class OcorrenciaServico {
     }
 
     /**
+     * Cancela uma ocorrência. Só pode ser cancelada se ainda estiver ABERTA (não despachada).
+     * 
+     * @param idOcorrencia ID da ocorrência a ser cancelada
+     * @param usuarioCancelamento Usuário que está cancelando a ocorrência
+     * @return Ocorrência cancelada
+     */
+    @Transactional
+    public Ocorrencia cancelarOcorrencia(Long idOcorrencia, Usuario usuarioCancelamento) {
+        Ocorrencia ocorrencia = ocorrenciaRepositorio.findById(idOcorrencia)
+                .orElseThrow(() -> new IllegalArgumentException("Ocorrência não encontrada"));
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.CANCELADA) {
+            throw new IllegalStateException("Ocorrência já está cancelada");
+        }
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.CONCLUIDA) {
+            throw new IllegalStateException("Ocorrência concluída não pode ser cancelada");
+        }
+
+        if (ocorrencia.getStatus() != StatusOcorrencia.ABERTA) {
+            throw new IllegalStateException("Apenas ocorrências ABERTAS podem ser canceladas. Status atual: " + ocorrencia.getStatus());
+        }
+
+        // Capturar status anterior
+        StatusOcorrencia statusAnterior = ocorrencia.getStatus();
+        
+        // Cancelar ocorrência
+        ocorrencia.setStatusOcorrencia(StatusOcorrencia.CANCELADA);
+        ocorrencia.setDataHoraFechamento(LocalDateTime.now());
+        ocorrencia = ocorrenciaRepositorio.save(ocorrencia);
+
+        // Registrar no histórico
+        try {
+            String descricao = String.format(
+                "Tipo: %s - Ocorrência cancelada. Gravidade: %s - Local: %s",
+                ocorrencia.getTipoOcorrencia(),
+                ocorrencia.getGravidade(),
+                ocorrencia.getBairroLocal() != null ? ocorrencia.getBairroLocal().getNome() : "Não informado"
+            );
+            
+            historicoOcorrenciaServico.registrarAcao(
+                ocorrencia,
+                usuarioCancelamento,
+                AcaoHistorico.CANCELAMENTO,
+                statusAnterior,
+                StatusOcorrencia.CANCELADA,
+                descricao
+            );
+        } catch (Exception e) {
+            System.err.println("Erro ao registrar histórico de cancelamento: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return ocorrencia;
+    }
+
+    /**
      * Conclui uma ocorrência, calculando o tempo de atendimento e verificando se o SLA foi cumprido.
      * 
      * @param idOcorrencia ID da ocorrência a ser concluída
@@ -668,6 +725,7 @@ public class OcorrenciaServico {
             dto.setIdAtendimento(atendimento.getId());
             dto.setDataHoraDespacho(atendimento.getDataHoraDespacho());
             dto.setDataHoraChegada(atendimento.getDataHoraChegada());
+            dto.setDataHoraRetorno(atendimento.getDataHoraRetorno());
             dto.setPlacaAmbulancia(atendimento.getAmbulancia() != null ? atendimento.getAmbulancia().getPlaca() : null);
             dto.setDistanciaKm(atendimento.getDistanciaKm());
         }
@@ -681,12 +739,14 @@ public class OcorrenciaServico {
         dto.setFoiDespachada(atendimento != null && atendimento.getDataHoraDespacho() != null);
         dto.setChegouLocal(atendimento != null && atendimento.getDataHoraChegada() != null);
         dto.setFoiConcluida(ocorrencia.getStatus() == StatusOcorrencia.CONCLUIDA);
+        // IMPORTANTE: Verificar retornouBase ANTES de calcular tempos
+        dto.setRetornouBase(atendimento != null && atendimento.getDataHoraRetorno() != null);
         
         // Calcular tempo total: abertura + tempo até chegada + tempo de retorno (se concluída e retornou)
         // O tempo total inclui:
         // - Se ainda não chegou: tempo desde abertura até agora (estimativa)
         // - Se chegou mas não retornou: tempo desde abertura até chegada + tempo decorrido de retorno
-        // - Se retornou: tempo desde abertura até retorno (tempo total completo)
+        // - Se retornou: tempo desde abertura até retorno (tempo total completo e FIXO - não aumenta mais)
         if (ocorrencia.getDataHoraAbertura() != null) {
             long tempoTotalSegundos = 0;
             Boolean chegouLocal = dto.getChegouLocal();
@@ -695,6 +755,7 @@ public class OcorrenciaServico {
             
             if (Boolean.TRUE.equals(retornouBase) && atendimento != null && atendimento.getDataHoraRetorno() != null) {
                 // Se retornou: tempo total = abertura até retorno (tempo completo incluindo retorno)
+                // IMPORTANTE: Usar dataHoraRetorno FIXO, não "agora", para que o tempo não continue aumentando
                 tempoTotalSegundos = java.time.Duration.between(
                     ocorrencia.getDataHoraAbertura(), atendimento.getDataHoraRetorno()).getSeconds();
             } else if (Boolean.TRUE.equals(chegouLocal) && atendimento != null && atendimento.getDataHoraChegada() != null) {
@@ -843,6 +904,7 @@ public class OcorrenciaServico {
                     // Isso torna a ambulância/equipe disponível novamente
                     if (tempoRestanteRetorno <= 0 && atendimento.getDataHoraRetorno() == null) {
                         try {
+                            // Registrar retorno (o histórico será criado mesmo sem usuário)
                             registrarRetorno(atendimento.getId(), null);
                             // Recarregar dados após retorno
                             atendimento = atendimentoRepositorio.findById(atendimento.getId())
@@ -1126,31 +1188,45 @@ public class OcorrenciaServico {
             }
         }
 
-        // Registrar no histórico
-        if (usuarioRetorno != null) {
-            try {
-                String descricao = String.format(
-                    "Tipo: %s - Ambulância %s retornou à base. " +
-                    "Tempo de retorno: %d minutos. Ambulância e equipe disponíveis novamente para novos chamados.",
-                    ocorrencia.getTipoOcorrencia(),
-                    ambulancia.getPlaca(),
-                    tempoRetornoMinutos
-                );
-                
-                historicoOcorrenciaServico.registrarAcao(
-                    ocorrencia,
-                    usuarioRetorno,
-                    AcaoHistorico.ALTERACAO_STATUS,
-                    StatusOcorrencia.CONCLUIDA,
-                    StatusOcorrencia.CONCLUIDA,
-                    descricao,
-                    ambulancia.getPlaca(),
-                    "Retornou à base"
-                );
-            } catch (Exception e) {
-                System.err.println("Erro ao registrar histórico de retorno: " + e.getMessage());
-                e.printStackTrace();
+        // Registrar no histórico (mesmo se usuarioRetorno for null - retorno automático)
+        try {
+            // Calcular tempo total desde abertura até retorno
+            long tempoTotalMinutos = 0;
+            if (ocorrencia.getDataHoraAbertura() != null && atendimento.getDataHoraRetorno() != null) {
+                long tempoTotalSegundos = java.time.Duration.between(
+                    ocorrencia.getDataHoraAbertura(), atendimento.getDataHoraRetorno()).getSeconds();
+                tempoTotalMinutos = tempoTotalSegundos / 60;
             }
+            
+            String descricao = String.format(
+                "Tipo: %s - Ambulância %s retornou à base. " +
+                "Tempo de retorno: %d minutos. Tempo total: %d minutos. " +
+                "Ambulância e equipe disponíveis novamente para novos chamados.",
+                ocorrencia.getTipoOcorrencia(),
+                ambulancia.getPlaca(),
+                tempoRetornoMinutos,
+                tempoTotalMinutos
+            );
+            
+            // Se não houver usuário, usar o usuário que registrou a ocorrência ou null
+            Usuario usuarioParaHistorico = usuarioRetorno;
+            if (usuarioParaHistorico == null && ocorrencia.getUsuarioRegistro() != null) {
+                usuarioParaHistorico = ocorrencia.getUsuarioRegistro();
+            }
+            
+            historicoOcorrenciaServico.registrarAcao(
+                ocorrencia,
+                usuarioParaHistorico,
+                AcaoHistorico.ALTERACAO_STATUS,
+                StatusOcorrencia.CONCLUIDA,
+                StatusOcorrencia.CONCLUIDA,
+                descricao,
+                ambulancia.getPlaca(),
+                "Retornou à base"
+            );
+        } catch (Exception e) {
+            System.err.println("Erro ao registrar histórico de retorno: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return atendimento;

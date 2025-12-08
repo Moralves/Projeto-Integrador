@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { historicoService } from '../services/historicoService';
 import './HistoricoOcorrencia.css';
 
-function HistoricoOcorrencia({ ocorrenciaId, atualizarEmTempoReal = true }) {
+function HistoricoOcorrencia({ ocorrenciaId, atualizarEmTempoReal = true, statusOcorrencia = null }) {
   const [historicos, setHistoricos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,45 +13,67 @@ function HistoricoOcorrencia({ ocorrenciaId, atualizarEmTempoReal = true }) {
       return;
     }
 
+    let interval = null;
+    let isMounted = true;
+
     const carregarHistorico = async () => {
       try {
-        // Preservar posição do scroll durante atualizações
-        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-        
         const dados = await historicoService.buscarPorOcorrencia(ocorrenciaId);
+        if (!isMounted) return;
+        
         setHistoricos(dados);
         setError(null);
         
-        // Restaurar posição do scroll após atualização
-        requestAnimationFrame(() => {
-          if (Math.abs((window.scrollY || document.documentElement.scrollTop) - scrollPosition) > 10) {
-            window.scrollTo({
-              top: scrollPosition,
-              behavior: 'auto'
-            });
-          }
-        });
+        // Verificar se ocorrência está concluída e se há histórico de retorno
+        // Se sim, parar atualizações
+        const temRetorno = dados && dados.some(h => 
+          (h.acao === 'ALTERACAO_STATUS' || h.acao === 'CONCLUSAO') && 
+          h.acaoAmbulancia && 
+          (h.acaoAmbulancia.includes('Retornou') || h.acaoAmbulancia.includes('retornou'))
+        );
+        
+        if (statusOcorrencia === 'CONCLUIDA' && temRetorno && interval) {
+          clearInterval(interval);
+          interval = null;
+        }
       } catch (err) {
+        if (!isMounted) return;
         setError(err.message);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     carregarHistorico();
 
-    // Atualizar em tempo real se habilitado
-    let interval = null;
+    // Atualizar em tempo real se habilitado e ainda não retornou
     if (atualizarEmTempoReal) {
-      interval = setInterval(carregarHistorico, 3000); // Atualizar a cada 3 segundos
+      // Verificar se já retornou antes de iniciar
+      historicoService.buscarPorOcorrencia(ocorrenciaId).then(dados => {
+        if (!isMounted) return;
+        
+        const temRetorno = dados && dados.some(h => 
+          (h.acao === 'ALTERACAO_STATUS' || h.acao === 'CONCLUSAO') && 
+          h.acaoAmbulancia && 
+          (h.acaoAmbulancia.includes('Retornou') || h.acaoAmbulancia.includes('retornou'))
+        );
+        
+        // Só iniciar intervalo se ainda não retornou
+        if (!(statusOcorrencia === 'CONCLUIDA' && temRetorno)) {
+          interval = setInterval(carregarHistorico, 5000); // Aumentado para 5 segundos para reduzir refresh
+        }
+      });
     }
 
     return () => {
+      isMounted = false;
       if (interval) {
         clearInterval(interval);
       }
     };
-  }, [ocorrenciaId, atualizarEmTempoReal]);
+  }, [ocorrenciaId, atualizarEmTempoReal, statusOcorrencia]);
 
   if (!ocorrenciaId) {
     return null;

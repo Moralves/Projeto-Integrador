@@ -16,37 +16,75 @@ function SLATimer({ ocorrenciaId, status }) {
       return;
     }
 
+    let interval = null;
+    let isMounted = true;
+    let retornouBase = false; // Flag para controlar se já retornou
+
     const carregarTimer = async () => {
+      // Se já retornou, não atualizar mais
+      if (retornouBase) {
+        return;
+      }
+
       try {
-        // Preservar posição do scroll durante atualizações
-        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-        
         const dados = await ocorrenciaService.obterTimer(ocorrenciaId);
+        if (!isMounted) return;
+        
+        // Se retornou à base, marcar flag e parar o intervalo IMEDIATAMENTE
+        if (dados && dados.retornouBase === true) {
+          retornouBase = true;
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+          setTimer(dados); // Manter os dados finais
+          setError(null);
+          setLoading(false);
+          return; // Não continuar atualizando
+        }
+        
         setTimer(dados);
         setError(null);
-        
-        // Restaurar posição do scroll após atualização
-        requestAnimationFrame(() => {
-          if (Math.abs((window.scrollY || document.documentElement.scrollTop) - scrollPosition) > 10) {
-            window.scrollTo({
-              top: scrollPosition,
-              behavior: 'auto'
-            });
-          }
-        });
       } catch (err) {
+        if (!isMounted) return;
         setError(err.message);
       } finally {
-        setLoading(false);
+        if (isMounted && !retornouBase) {
+          setLoading(false);
+        }
       }
     };
 
-    carregarTimer();
-
-    // Atualizar a cada 2 segundos sempre (mesmo quando concluída, para mostrar retorno)
-    const interval = setInterval(carregarTimer, 2000);
+    // Carregar inicialmente e verificar se já retornou
+    ocorrenciaService.obterTimer(ocorrenciaId).then(dados => {
+      if (!isMounted) return;
+      
+      // Verificar se já retornou no carregamento inicial
+      if (dados && dados.retornouBase === true) {
+        retornouBase = true;
+        setTimer(dados);
+        setError(null);
+        setLoading(false);
+        // Não iniciar intervalo se já retornou
+        return;
+      }
+      
+      setTimer(dados);
+      setError(null);
+      setLoading(false);
+      
+      // Só iniciar intervalo se ainda não retornou e status não for CONCLUIDA
+      if (dados && dados.retornouBase !== true && status !== 'CONCLUIDA') {
+        interval = setInterval(carregarTimer, 2000);
+      }
+    }).catch(err => {
+      if (!isMounted) return;
+      setError(err.message);
+      setLoading(false);
+    });
 
     return () => {
+      isMounted = false;
       if (interval) {
         clearInterval(interval);
       }

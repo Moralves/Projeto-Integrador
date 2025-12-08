@@ -10,39 +10,54 @@
 
 BEGIN;
 
--- 1. Deletar rotas de atendimento (conexões calculadas pelo Dijkstra)
---    Isso será deletado automaticamente quando deletarmos atendimentos,
---    mas vamos fazer explicitamente para garantir
-DELETE FROM atendimento_rota_conexao;
-
--- 2. Resetar status das ambulâncias que estão EM_ATENDIMENTO para DISPONIVEL
+-- 1. Resetar status das ambulâncias e profissionais ANTES de deletar (importante para evitar erros)
+--    Isso remove o bloqueio de edição/desativação que implementamos
 UPDATE ambulancias 
 SET status = 'DISPONIVEL' 
 WHERE status = 'EM_ATENDIMENTO';
 
--- 3. Resetar status dos profissionais que estão EM_ATENDIMENTO para DISPONIVEL
 UPDATE profissionais 
 SET status = 'DISPONIVEL' 
 WHERE status = 'EM_ATENDIMENTO';
 
+-- 2. Deletar rotas de atendimento (conexões calculadas pelo Dijkstra)
+--    Tem ON DELETE CASCADE, mas deletamos explicitamente para garantir ordem
+DELETE FROM atendimento_rota_conexao;
+
+-- 3. Deletar histórico de ocorrências
+--    Tem ON DELETE CASCADE na FK de ocorrencias, mas deletamos explicitamente para garantir ordem
+DELETE FROM historico_ocorrencias;
+
 -- 4. Deletar todos os atendimentos
---    Isso deve ser feito antes de deletar ocorrências devido à FK
+--    IMPORTANTE: Deve ser deletado ANTES das ocorrências porque NÃO tem ON DELETE CASCADE
+--    Se der erro aqui, tente usar LIMPAR_OCORRENCIAS_ALTERNATIVO.sql que usa TRUNCATE CASCADE
 DELETE FROM atendimentos;
 
 -- 5. Deletar todas as ocorrências
---    O histórico será deletado automaticamente devido ao ON DELETE CASCADE
+--    Agora que atendimentos foram deletados, podemos deletar ocorrências
 DELETE FROM ocorrencias;
 
--- 6. Verificar se há histórico órfão (não deveria ter, mas por segurança)
-DELETE FROM historico_ocorrencias 
-WHERE id_ocorrencia NOT IN (SELECT id FROM ocorrencias);
-
--- 7. Resetar sequências (opcional, mas recomendado para manter IDs limpos)
+-- 6. Resetar sequências (opcional, mas recomendado para manter IDs limpos)
 --    Isso fará com que novas ocorrências comecem do ID 1
-ALTER SEQUENCE IF EXISTS ocorrencias_id_seq RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS atendimentos_id_seq RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS historico_ocorrencias_id_seq RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS atendimento_rota_conexao_id_seq RESTART WITH 1;
+DO $$
+BEGIN
+    -- Resetar sequências apenas se existirem
+    IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'ocorrencias_id_seq') THEN
+        ALTER SEQUENCE ocorrencias_id_seq RESTART WITH 1;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'atendimentos_id_seq') THEN
+        ALTER SEQUENCE atendimentos_id_seq RESTART WITH 1;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'historico_ocorrencias_id_seq') THEN
+        ALTER SEQUENCE historico_ocorrencias_id_seq RESTART WITH 1;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'atendimento_rota_conexao_id_seq') THEN
+        ALTER SEQUENCE atendimento_rota_conexao_id_seq RESTART WITH 1;
+    END IF;
+END $$;
 
 COMMIT;
 

@@ -106,6 +106,12 @@ public class ProfissionalControlador {
         Profissional p = profissionalRepositorio.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
 
+        // Não permitir alterar status de profissional que está em atendimento
+        if (p.getStatus() == StatusProfissional.EM_ATENDIMENTO) {
+            throw new IllegalStateException(
+                "Não é possível alterar status de profissional que está em atendimento. Finalize o atendimento antes.");
+        }
+
         // Validar transição de status
         if (status == StatusProfissional.DISPONIVEL && 
             p.getStatus() == StatusProfissional.EM_ATENDIMENTO) {

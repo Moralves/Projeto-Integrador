@@ -115,5 +115,24 @@ export const ambulanciaService = {
       throw error;
     }
   },
+
+  async verificarEmAtendimento(id) {
+    try {
+      const response = await fetch(`${API_URL}/ambulancias/${id}/em-atendimento`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao verificar status de atendimento');
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 

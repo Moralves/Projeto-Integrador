@@ -19,4 +19,7 @@ public interface AtendimentoRepositorio extends JpaRepository<Atendimento, Long>
     
     @Query("SELECT a FROM Atendimento a WHERE a.equipe.id = :idEquipe AND a.ocorrencia.status IN (com.vitalistech.sosrota.dominio.modelo.StatusOcorrencia.DESPACHADA, com.vitalistech.sosrota.dominio.modelo.StatusOcorrencia.EM_ATENDIMENTO)")
     List<Atendimento> findAtendimentosAtivosPorEquipe(Long idEquipe);
+    
+    @Query("SELECT a FROM Atendimento a WHERE a.ambulancia.id = :idAmbulancia AND a.ocorrencia.status IN (com.vitalistech.sosrota.dominio.modelo.StatusOcorrencia.DESPACHADA, com.vitalistech.sosrota.dominio.modelo.StatusOcorrencia.EM_ATENDIMENTO)")
+    List<Atendimento> findAtendimentosAtivosPorAmbulancia(Long idAmbulancia);
 }

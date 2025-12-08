@@ -124,6 +124,27 @@ public class OcorrenciaControlador {
         }
     }
 
+    @PostMapping("/{id}/cancelar")
+    public ResponseEntity<?> cancelar(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        try {
+            Usuario usuarioCancelamento = null;
+            if (userId != null) {
+                usuarioCancelamento = usuarioRepositorio.findById(userId)
+                        .orElse(null);
+            }
+            
+            Ocorrencia ocorrencia = ocorrenciaServico.cancelarOcorrencia(id, usuarioCancelamento);
+            return ResponseEntity.ok(ocorrencia);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/{id}/concluir")
     public ResponseEntity<?> concluir(
             @PathVariable Long id,

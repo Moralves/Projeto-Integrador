@@ -13,6 +13,7 @@ function ListarOcorrencias() {
   const [filtroGravidade, setFiltroGravidade] = useState('TODAS');
   const [busca, setBusca] = useState('');
   const [despachando, setDespachando] = useState(null);
+  const [cancelando, setCancelando] = useState(null);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(null);
   const [ocorrenciasExpandidas, setOcorrenciasExpandidas] = useState(new Set());
   const isAutoRefreshRef = useRef(false);
@@ -51,13 +52,51 @@ function ListarOcorrencias() {
   useEffect(() => {
     carregarOcorrencias(false);
     
-    // Atualizar ocorrências a cada 5 segundos para refletir mudanças em tempo real
-    // Preservar posição do scroll durante atualizações automáticas
-    const interval = setInterval(() => {
-      carregarOcorrencias(true);
-    }, 5000);
+    let interval = null;
+    let isMounted = true;
     
-    return () => clearInterval(interval);
+    // Função para verificar se ainda há ocorrências ativas
+    const verificarEAtualizar = async () => {
+      try {
+        // Preservar posição do scroll
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        scrollPositionRef.current = scrollPosition;
+        isAutoRefreshRef.current = true;
+        
+        const dados = await ocorrenciaService.listar();
+        if (!isMounted) return;
+        
+        setOcorrencias(dados);
+        setError('');
+        
+        // Restaurar posição do scroll após atualização
+        requestAnimationFrame(() => {
+          if (isMounted) {
+            window.scrollTo({
+              top: scrollPositionRef.current,
+              behavior: 'auto'
+            });
+            isAutoRefreshRef.current = false;
+          }
+        });
+      } catch (err) {
+        if (!isMounted) return;
+        setError('Erro ao carregar ocorrências: ' + err.message);
+      }
+    };
+    
+    // Atualizar ocorrências a cada 10 segundos para refletir mudanças em tempo real
+    // Intervalo aumentado para reduzir refresh excessivo
+    interval = setInterval(() => {
+      verificarEAtualizar();
+    }, 10000);
+    
+    return () => {
+      isMounted = false;
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, []);
 
   const handleDespachar = async (id) => {
@@ -81,6 +120,25 @@ function ListarOcorrencias() {
 
   const handleDespacharAposSugestao = async () => {
     await carregarOcorrencias();
+  };
+
+  const handleCancelar = async (id) => {
+    if (!window.confirm('Deseja realmente cancelar esta ocorrência? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      setCancelando(id);
+      setError('');
+      await ocorrenciaService.cancelar(id);
+      await carregarOcorrencias(false);
+      alert('Ocorrência cancelada com sucesso!');
+    } catch (err) {
+      setError('Erro ao cancelar ocorrência: ' + err.message);
+      alert('Erro ao cancelar: ' + err.message);
+    } finally {
+      setCancelando(null);
+    }
   };
 
   const formatarData = (data) => {
@@ -354,7 +412,7 @@ function ListarOcorrencias() {
                                 </button>
                                 <button
                                   onClick={() => handleDespachar(oc.id)}
-                                  disabled={despachando === oc.id}
+                                  disabled={despachando === oc.id || cancelando === oc.id}
                                   style={{
                                     padding: '8px 16px',
                                     backgroundColor: '#10b981',
@@ -363,11 +421,28 @@ function ListarOcorrencias() {
                                     borderRadius: '6px',
                                     fontSize: '0.875rem',
                                     fontWeight: '600',
-                                    cursor: despachando === oc.id ? 'not-allowed' : 'pointer',
-                                    opacity: despachando === oc.id ? 0.6 : 1
+                                    cursor: despachando === oc.id || cancelando === oc.id ? 'not-allowed' : 'pointer',
+                                    opacity: despachando === oc.id || cancelando === oc.id ? 0.6 : 1
                                   }}
                                 >
                                   {despachando === oc.id ? 'Despachando...' : '🚑 Despachar'}
+                                </button>
+                                <button
+                                  onClick={() => handleCancelar(oc.id)}
+                                  disabled={despachando === oc.id || cancelando === oc.id}
+                                  style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600',
+                                    cursor: despachando === oc.id || cancelando === oc.id ? 'not-allowed' : 'pointer',
+                                    opacity: despachando === oc.id || cancelando === oc.id ? 0.6 : 1
+                                  }}
+                                >
+                                  {cancelando === oc.id ? '⏳ Cancelando...' : '❌ Cancelar'}
                                 </button>
                               </div>
                             )
@@ -384,7 +459,11 @@ function ListarOcorrencias() {
                           {(oc.status === 'DESPACHADA' || oc.status === 'EM_ATENDIMENTO' || oc.status === 'CONCLUIDA') && (
                             <tr>
                               <td colSpan="7" style={{ padding: '0 16px 16px 16px' }}>
-                                <HistoricoOcorrencia ocorrenciaId={oc.id} atualizarEmTempoReal={oc.status !== 'CONCLUIDA'} />
+                                <HistoricoOcorrencia 
+                                  ocorrenciaId={oc.id} 
+                                  atualizarEmTempoReal={true}
+                                  statusOcorrencia={oc.status}
+                                />
                               </td>
                             </tr>
                           )}

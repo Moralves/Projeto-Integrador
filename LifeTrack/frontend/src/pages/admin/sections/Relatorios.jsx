@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { relatorioService } from '../../../services/relatorioService';
+import HistoricoOcorrencia from '../../../components/HistoricoOcorrencia';
+import SLATimer from '../../../components/SLATimer';
 import '../AdminDashboard.css';
 
 function Relatorios() {
   const [dados, setDados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [ocorrenciasExpandidas, setOcorrenciasExpandidas] = useState(new Set());
 
   useEffect(() => {
     carregarRelatorio();
@@ -74,6 +77,22 @@ function Relatorios() {
     );
   };
 
+  const toggleDetalhes = (ocorrenciaId) => {
+    setOcorrenciasExpandidas(prev => {
+      const novo = new Set(prev);
+      if (novo.has(ocorrenciaId)) {
+        novo.delete(ocorrenciaId);
+      } else {
+        novo.add(ocorrenciaId);
+      }
+      return novo;
+    });
+  };
+
+  const deveMostrarDetalhes = (ocorrenciaId) => {
+    return ocorrenciasExpandidas.has(ocorrenciaId);
+  };
+
   return (
     <div className="admin-dashboard">
       <div className="dashboard-header">
@@ -92,12 +111,14 @@ function Relatorios() {
           <table className="usuarios-table">
             <thead>
               <tr>
+                <th style={{ width: '50px' }}></th>
                 <th>ID</th>
                 <th>Data/Hora</th>
                 <th>Bairro</th>
                 <th>Tipo</th>
                 <th>Gravidade</th>
                 <th>Status</th>
+                <th>Tempo Total</th>
                 <th>Registrado por</th>
                 <th>Despachado por</th>
                 <th>Data Despacho</th>
@@ -108,40 +129,126 @@ function Relatorios() {
             <tbody>
               {dados.length === 0 ? (
                 <tr>
-                  <td colSpan="11" style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan="13" style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     Nenhuma ocorrência encontrada.
                   </td>
                 </tr>
               ) : (
-                dados.map(item => (
-                  <tr key={item.id}>
-                    <td>#{item.id}</td>
-                    <td>{formatarData(item.dataHoraAbertura)}</td>
-                    <td>{item.bairroNome || '-'}</td>
-                    <td>{item.tipoOcorrencia}</td>
-                    <td>{getGravidadeBadge(item.gravidade)}</td>
-                    <td>{getStatusBadge(item.status)}</td>
-                    <td>
-                      {item.usuarioRegistroNome ? (
-                        <div>
-                          <div style={{ fontWeight: '600' }}>{item.usuarioRegistroNome}</div>
-                          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.usuarioRegistroLogin}</div>
-                        </div>
-                      ) : '-'}
-                    </td>
-                    <td>
-                      {item.usuarioDespachoNome ? (
-                        <div>
-                          <div style={{ fontWeight: '600' }}>{item.usuarioDespachoNome}</div>
-                          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.usuarioDespachoLogin}</div>
-                        </div>
-                      ) : '-'}
-                    </td>
-                    <td>{formatarData(item.dataHoraDespacho)}</td>
-                    <td>{item.ambulanciaPlaca || '-'}</td>
-                    <td>{item.distanciaKm ? item.distanciaKm.toFixed(2) : '-'}</td>
-                  </tr>
-                ))
+                dados.map(item => {
+                  const expandido = deveMostrarDetalhes(item.id);
+                  return (
+                    <React.Fragment key={item.id}>
+                      <tr style={{ cursor: 'pointer' }} onClick={() => toggleDetalhes(item.id)}>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{ fontSize: '1.2rem' }}>
+                            {expandido ? '▼' : '▶'}
+                          </span>
+                        </td>
+                        <td>#{item.id}</td>
+                        <td>{formatarData(item.dataHoraAbertura)}</td>
+                        <td>{item.bairroNome || '-'}</td>
+                        <td>{item.tipoOcorrencia}</td>
+                        <td>{getGravidadeBadge(item.gravidade)}</td>
+                        <td>{getStatusBadge(item.status)}</td>
+                        <td>
+                          <span style={{
+                            fontWeight: '600',
+                            color: item.status === 'CONCLUIDA' && item.tempoTotalFormatado ? '#059669' : '#374151'
+                          }}>
+                            {item.tempoTotalFormatado || '-'}
+                          </span>
+                        </td>
+                        <td>
+                          {item.usuarioRegistroNome ? (
+                            <div>
+                              <div style={{ fontWeight: '600' }}>{item.usuarioRegistroNome}</div>
+                              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.usuarioRegistroLogin}</div>
+                            </div>
+                          ) : '-'}
+                        </td>
+                        <td>
+                          {item.usuarioDespachoNome ? (
+                            <div>
+                              <div style={{ fontWeight: '600' }}>{item.usuarioDespachoNome}</div>
+                              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.usuarioDespachoLogin}</div>
+                            </div>
+                          ) : '-'}
+                        </td>
+                        <td>{formatarData(item.dataHoraDespacho)}</td>
+                        <td>{item.ambulanciaPlaca || '-'}</td>
+                        <td>{item.distanciaKm ? item.distanciaKm.toFixed(2) : '-'}</td>
+                      </tr>
+                      {expandido && (
+                        <>
+                          {(item.status === 'ABERTA' || item.status === 'DESPACHADA' || item.status === 'EM_ATENDIMENTO' || item.status === 'CONCLUIDA') && (
+                            <tr>
+                              <td colSpan="13" style={{ padding: '0 16px 16px 16px', backgroundColor: '#f9fafb' }}>
+                                <SLATimer ocorrenciaId={item.id} status={item.status} />
+                              </td>
+                            </tr>
+                          )}
+                          {(item.status === 'DESPACHADA' || item.status === 'EM_ATENDIMENTO' || item.status === 'CONCLUIDA') && (
+                            <tr>
+                              <td colSpan="13" style={{ padding: '0 16px 16px 16px', backgroundColor: '#f9fafb' }}>
+                                <HistoricoOcorrencia 
+                                  ocorrenciaId={item.id} 
+                                  atualizarEmTempoReal={item.status !== 'CONCLUIDA'}
+                                  statusOcorrencia={item.status}
+                                />
+                              </td>
+                            </tr>
+                          )}
+                          <tr>
+                            <td colSpan="13" style={{ padding: '16px', backgroundColor: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                                {item.slaMinutos && (
+                                  <div>
+                                    <strong style={{ color: '#6b7280', fontSize: '0.875rem' }}>SLA:</strong>
+                                    <div style={{ fontSize: '1.125rem', fontWeight: '600' }}>{item.slaMinutos} minutos</div>
+                                  </div>
+                                )}
+                                {item.tempoAtendimentoMinutos !== null && item.tempoAtendimentoMinutos !== undefined && (
+                                  <div>
+                                    <strong style={{ color: '#6b7280', fontSize: '0.875rem' }}>Tempo de Atendimento:</strong>
+                                    <div style={{ fontSize: '1.125rem', fontWeight: '600' }}>{item.tempoAtendimentoMinutos} minutos</div>
+                                  </div>
+                                )}
+                                {item.slaCumprido !== null && (
+                                  <div>
+                                    <strong style={{ color: '#6b7280', fontSize: '0.875rem' }}>SLA Cumprido:</strong>
+                                    <div style={{ 
+                                      fontSize: '1.125rem', 
+                                      fontWeight: '600',
+                                      color: item.slaCumprido ? '#059669' : '#dc2626'
+                                    }}>
+                                      {item.slaCumprido ? '✅ Sim' : '❌ Não'}
+                                    </div>
+                                  </div>
+                                )}
+                                {item.tempoExcedidoMinutos !== null && item.tempoExcedidoMinutos !== undefined && item.tempoExcedidoMinutos > 0 && (
+                                  <div>
+                                    <strong style={{ color: '#6b7280', fontSize: '0.875rem' }}>Tempo Excedido:</strong>
+                                    <div style={{ fontSize: '1.125rem', fontWeight: '600', color: '#dc2626' }}>
+                                      {item.tempoExcedidoMinutos} minutos
+                                    </div>
+                                  </div>
+                                )}
+                                {item.observacoes && (
+                                  <div style={{ gridColumn: '1 / -1' }}>
+                                    <strong style={{ color: '#6b7280', fontSize: '0.875rem' }}>Observações:</strong>
+                                    <div style={{ marginTop: '4px', padding: '8px', backgroundColor: '#ffffff', borderRadius: '6px', fontSize: '0.875rem' }}>
+                                      {item.observacoes}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        </>
+                      )}
+                    </React.Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>

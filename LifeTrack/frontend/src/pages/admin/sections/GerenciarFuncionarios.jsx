@@ -259,7 +259,15 @@ function GerenciarFuncionarios() {
                         <button
                           className="btn-toggle"
                           onClick={() => handleAlterarStatus(prof.id, 'EM_FOLGA')}
-                          style={{ backgroundColor: '#f39c12', color: 'white', fontSize: '0.85rem' }}
+                          disabled={prof.status === 'EM_ATENDIMENTO'}
+                          style={{ 
+                            backgroundColor: '#f39c12', 
+                            color: 'white', 
+                            fontSize: '0.85rem',
+                            opacity: prof.status === 'EM_ATENDIMENTO' ? 0.5 : 1,
+                            cursor: prof.status === 'EM_ATENDIMENTO' ? 'not-allowed' : 'pointer'
+                          }}
+                          title={prof.status === 'EM_ATENDIMENTO' ? 'Não é possível alterar status de funcionário em atendimento' : ''}
                         >
                           Folga
                         </button>
@@ -268,7 +276,15 @@ function GerenciarFuncionarios() {
                         <button
                           className="btn-toggle"
                           onClick={() => handleAlterarStatus(prof.id, 'DISPONIVEL')}
-                          style={{ backgroundColor: '#27ae60', color: 'white', fontSize: '0.85rem' }}
+                          disabled={prof.status === 'EM_ATENDIMENTO'}
+                          style={{ 
+                            backgroundColor: '#27ae60', 
+                            color: 'white', 
+                            fontSize: '0.85rem',
+                            opacity: prof.status === 'EM_ATENDIMENTO' ? 0.5 : 1,
+                            cursor: prof.status === 'EM_ATENDIMENTO' ? 'not-allowed' : 'pointer'
+                          }}
+                          title={prof.status === 'EM_ATENDIMENTO' ? 'Não é possível alterar status de funcionário em atendimento' : ''}
                         >
                           Disponível
                         </button>
@@ -277,6 +293,12 @@ function GerenciarFuncionarios() {
                         <button
                           className="btn-toggle desativar"
                           onClick={() => handleDesativar(prof.id)}
+                          disabled={prof.status === 'EM_ATENDIMENTO'}
+                          style={{
+                            opacity: prof.status === 'EM_ATENDIMENTO' ? 0.5 : 1,
+                            cursor: prof.status === 'EM_ATENDIMENTO' ? 'not-allowed' : 'pointer'
+                          }}
+                          title={prof.status === 'EM_ATENDIMENTO' ? 'Não é possível desativar funcionário em atendimento' : ''}
                         >
                           Desativar
                         </button>
