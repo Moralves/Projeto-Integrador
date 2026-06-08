@@ -1,0 +1,64 @@
+<div *ngIf="ocorrenciaId" class="historico-container">
+  
+  <div *ngIf="loading" class="historico-loading">
+    Carregando histórico...
+  </div>
+
+  <div *ngIf="error" class="historico-error">
+    Erro ao carregar histórico: {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error && historicos.length === 0" class="historico-empty">
+    Nenhum histórico registrado ainda.
+  </div>
+
+  <ng-container *ngIf="!loading && !error && historicos.length > 0">
+    <div class="historico-header">
+      <h3>Histórico da Ocorrência</h3>
+      <span *ngIf="atualizarEmTempoReal" class="historico-badge-live">🟢 Ao vivo</span>
+    </div>
+    
+    <div class="historico-timeline">
+      <div *ngFor="let historico of historicos" class="historico-item">
+        <div class="historico-item-icon" [style.backgroundColor]="getAcaoColor(historico.acao)">
+          {{ getAcaoIcon(historico.acao) }}
+        </div>
+        
+        <div class="historico-item-content">
+          <div class="historico-item-header">
+            <span class="historico-acao" [style.color]="getAcaoColor(historico.acao)">
+              {{ historico.acao }}
+            </span>
+            <span class="historico-data">{{ formatarData(historico.dataHora) }}</span>
+          </div>
+          
+          <div class="historico-item-body">
+            <div *ngIf="historico.tipoOcorrencia" class="historico-info-row">
+              <strong>Tipo:</strong> {{ historico.tipoOcorrencia }}
+            </div>
+            
+            <div *ngIf="historico.placaAmbulancia" class="historico-info-row">
+              <strong>Ambulância:</strong> {{ historico.placaAmbulancia }}
+              <span *ngIf="historico.acaoAmbulancia" class="historico-acao-ambulancia"> - {{ historico.acaoAmbulancia }}</span>
+            </div>
+            
+            <div *ngIf="historico.descricaoAcao" class="historico-descricao">
+              {{ historico.descricaoAcao }}
+            </div>
+            
+            <div *ngIf="historico.statusAnterior && historico.statusNovo" class="historico-status-change">
+              <span class="status-badge status-anterior">{{ historico.statusAnterior }}</span>
+              <span class="status-arrow">→</span>
+              <span class="status-badge status-novo">{{ historico.statusNovo }}</span>
+            </div>
+            
+            <div *ngIf="historico.usuarioNome" class="historico-usuario">
+              Por: {{ historico.usuarioNome }} ({{ historico.usuarioPerfil }})
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+</div>

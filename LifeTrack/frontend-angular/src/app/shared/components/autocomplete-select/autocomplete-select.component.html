@@ -1,0 +1,31 @@
+<div #containerRef class="autocomplete-container">
+  <input
+    #inputRef
+    type="text"
+    [(ngModel)]="searchTerm"
+    (input)="handleInputChange($event)"
+    (focus)="handleFocus()"
+    (keydown)="handleKeyDown($event)"
+    (blur)="onTouched()"
+    [placeholder]="placeholder"
+    [required]="required"
+    class="autocomplete-input"
+  />
+  
+  <div *ngIf="isOpen && filteredOptions.length > 0" class="autocomplete-dropdown">
+    <div
+      *ngFor="let option of filteredOptions; let i = index"
+      (click)="handleSelect(option)"
+      (mouseenter)="highlightedIndex = i"
+      class="autocomplete-option"
+      [class.highlighted]="i === highlightedIndex"
+      [class.selected]="getOptionValue(option) === innerValue"
+    >
+      {{ getOptionLabel(option) }}
+    </div>
+  </div>
+
+  <div *ngIf="isOpen && filteredOptions.length === 0 && searchTerm" class="autocomplete-dropdown no-results">
+    Nenhuma opção encontrada
+  </div>
+</div>

@@ -1,0 +1,116 @@
+<div *ngIf="showTimer">
+  <div *ngIf="loading" class="sla-timer-container">
+    <div class="sla-loading">Carregando timer...</div>
+  </div>
+
+  <div *ngIf="!loading && !error && timer" class="sla-timer-container" [ngClass]="getSlaStatusClass()">
+    <div class="sla-header">
+      <div class="sla-status-badge">
+        <span class="sla-status-icon">
+          {{ timer.slaExcedido ? '⚠️' : timer.slaEmRisco ? '⏱️' : '✅' }}
+        </span>
+        <span class="sla-status-text">{{ getSlaStatusText() }}</span>
+      </div>
+      <div class="sla-tempo-restante">
+        {{ timer.tempoRestanteFormatado || '--' }}
+      </div>
+    </div>
+    
+    <div class="sla-progress-bar-container">
+      <div class="sla-progress-segmented">
+        <!-- Etapa 1: Tempo até despacho -->
+        <div *ngIf="etapas.ateDespacho > 0"
+             class="sla-progress-segment sla-segment-ate-despacho"
+             [style.width.%]="etapas.ateDespacho < 1 ? 1 : etapas.ateDespacho"
+             title="Tempo desde abertura até despacho">
+        </div>
+        <!-- Etapa 2: Tempo de deslocamento (despacho até chegada) -->
+        <div *ngIf="etapas.ateChegada > 0"
+             class="sla-progress-segment sla-segment-ida"
+             [style.width.%]="etapas.ateChegada < 1 ? 1 : etapas.ateChegada"
+             title="Tempo de deslocamento: base → destino">
+        </div>
+        <!-- Etapa 3: Tempo de retorno (apenas se OS está finalizada) -->
+        <div *ngIf="timer.foiConcluida && etapas.retorno > 0"
+             class="sla-progress-segment sla-segment-retorno"
+             [style.width.%]="etapas.retorno < 1 ? 1 : etapas.retorno"
+             title="Tempo de retorno à base (não conta para SLA)">
+        </div>
+        <!-- Barra de fundo mostrando progresso total do SLA -->
+        <div *ngIf="percentual > 0"
+             style="position: absolute; top: 0; left: 0; height: 100%; opacity: 0.15; z-index: 0; border-radius: 10px;"
+             [style.width.%]="percentual > 100 ? 100 : percentual"
+             [style.backgroundColor]="timer.slaExcedido ? '#dc3545' : timer.slaEmRisco ? '#ffc107' : '#10b981'">
+        </div>
+      </div>
+      <div class="sla-progress-text">
+        {{ timer.slaMinutos ? (percentual | number:'1.1-1') + '% do SLA utilizado' : 'Aguardando SLA...' }}
+      </div>
+      <div class="sla-progress-legend">
+        <span *ngIf="etapas.ateDespacho > 0" class="sla-legend-item">
+          <span class="sla-legend-color sla-legend-ate-despacho"></span>
+          Até Despacho
+        </span>
+        <span *ngIf="etapas.ateChegada > 0" class="sla-legend-item">
+          <span class="sla-legend-color sla-legend-ida"></span>
+          Deslocamento
+        </span>
+        <span *ngIf="timer.foiConcluida && etapas.retorno > 0" class="sla-legend-item">
+          <span class="sla-legend-color sla-legend-retorno"></span>
+          Retorno (não conta para SLA)
+        </span>
+      </div>
+    </div>
+
+    <div class="sla-detalhes">
+      <div class="sla-detalhe-item">
+        <span class="sla-detalhe-label">Tempo Total:</span>
+        <span class="sla-detalhe-valor">{{ timer.tempoTotalFormatado || '--' }}</span>
+      </div>
+      <div *ngIf="timer.tempoRestanteAteChegadaMinutos !== null && timer.tempoRestanteAteChegadaMinutos !== undefined && !timer.chegouLocal" class="sla-detalhe-item">
+        <span class="sla-detalhe-label">Tempo Restante até Chegada:</span>
+        <span class="sla-detalhe-valor" [style.color]="timer.tempoRestanteAteChegadaMinutos <= 0 ? '#dc3545' : '#28a745'" style="font-weight: bold;">
+          {{ timer.tempoRestanteAteChegadaMinutos > 0 ? timer.tempoRestanteAteChegadaMinutos + 'm' : 'Chegou!' }}
+        </span>
+      </div>
+      <div *ngIf="timer.tempoAteChegadaMinutos !== null && timer.chegouLocal" class="sla-detalhe-item">
+        <span class="sla-detalhe-label">Tempo até Chegada:</span>
+        <span class="sla-detalhe-valor">
+          {{ timer.tempoAteChegadaMinutos !== null ? timer.tempoAteChegadaMinutos + 'm' : '--' }}
+        </span>
+      </div>
+      <div *ngIf="timer.distanciaKm !== null && timer.distanciaKm !== undefined" class="sla-detalhe-item">
+        <span class="sla-detalhe-label">Distância:</span>
+        <span class="sla-detalhe-valor">
+          {{ timer.distanciaKm | number:'1.2-2' }} km
+        </span>
+      </div>
+      <div *ngIf="timer.slaMinutos" class="sla-detalhe-item">
+        <span class="sla-detalhe-label">SLA Total:</span>
+        <span class="sla-detalhe-valor">{{ timer.slaMinutos }}m</span>
+      </div>
+      <ng-container *ngIf="timer.foiConcluida">
+        <div *ngIf="timer.retornouBase; else retornoAndamento" class="sla-detalhe-item">
+          <span class="sla-detalhe-label">Tempo Retorno:</span>
+          <span class="sla-detalhe-valor" style="color: #28a745;">
+            {{ timer.tempoRetornoDecorridoMinutos !== null ? timer.tempoRetornoDecorridoMinutos + 'm' : '--' }} ✅
+          </span>
+        </div>
+        <ng-template #retornoAndamento>
+          <div class="sla-detalhe-item">
+            <span class="sla-detalhe-label">Tempo Restante Retorno:</span>
+            <span class="sla-detalhe-valor" style="color: #ffc107; font-weight: bold;">
+              {{ timer.tempoRetornoMinutos !== null && timer.tempoRetornoDecorridoMinutos !== null ? (timer.tempoRetornoMinutos - timer.tempoRetornoDecorridoMinutos > 0 ? timer.tempoRetornoMinutos - timer.tempoRetornoDecorridoMinutos : 0) + 'm' : '--' }} (em andamento)
+            </span>
+          </div>
+        </ng-template>
+        <div *ngIf="timer.retornouBase" class="sla-detalhe-item">
+          <span class="sla-detalhe-label">Status:</span>
+          <span class="sla-detalhe-valor" style="color: #28a745; font-weight: bold;">
+            Ambulância e equipe disponíveis ✅
+          </span>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>
