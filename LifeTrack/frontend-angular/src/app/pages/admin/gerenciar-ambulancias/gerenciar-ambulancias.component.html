@@ -1,0 +1,100 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1 class="page-title">Gerenciamento de Ambulâncias</h1>
+    <button class="btn btn-primary" (click)="openModal()">+ Nova Ambulância</button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="loading-box">Carregando ambulâncias...</div>
+
+  <div *ngIf="!loading" class="table-card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr>
+          <th>ID</th><th>Placa</th><th>Tipo</th><th>Status</th><th>Bairro Base</th><th>Ativa</th><th>Ações</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngIf="ambulancias.length === 0"><td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Nenhuma ambulância cadastrada</td></tr>
+          <tr *ngFor="let amb of ambulancias">
+            <td class="text-muted">{{ amb.id }}</td>
+            <td><strong>{{ amb.placa }}</strong></td>
+            <td><span class="badge badge-info">{{ amb.tipo }}</span></td>
+            <td><span class="badge badge-ativo">{{ amb.status }}</span></td>
+            <td>{{ amb.bairroBase?.nome || 'N/A' }}</td>
+            <td>
+              <span class="badge" [class.badge-ativo]="amb.ativa" [class.badge-inativo]="!amb.ativa">
+                {{ amb.ativa ? 'Sim' : 'Não' }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-sm" [class.btn-danger]="amb.ativa" [class.btn-success]="!amb.ativa" (click)="toggleStatus(amb.id, amb.ativa)">
+                {{ amb.ativa ? 'Desativar' : 'Ativar' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Nova Ambulância</h2>
+      <button class="btn-close-icon" (click)="closeModal()">×</button>
+    </div>
+    <form (ngSubmit)="handleSubmit()">
+      <div class="form-group">
+        <label class="form-label">Placa *</label>
+        <input class="form-input" type="text" [(ngModel)]="formData.placa" name="placa" placeholder="ABC-1234" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo *</label>
+        <select class="form-select" [(ngModel)]="formData.tipo" name="tipo" (change)="onTipoChange(formData.tipo)" required>
+          <option value="BASICA">Básica</option>
+          <option value="UTI">UTI</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bairro Base *</label>
+        <!-- Sugestões Dijkstra -->
+        <div *ngIf="bairrosSugeridos.length > 0 || loadingSugestoes" class="info-box" style="margin-bottom:12px">
+          <strong>💡 Sugestões (Algoritmo Dijkstra):</strong>
+          <div *ngIf="loadingSugestoes" style="color:#666;font-size:0.85rem;margin-top:6px">Carregando sugestões...</div>
+          <div *ngIf="!loadingSugestoes" class="sugestoes-bairro" style="margin-top:8px">
+            <button *ngFor="let s of bairrosSugeridos; let i = index"
+              type="button" class="sugestao-btn"
+              [class.selecionado]="formData.idBairroBase === s.id.toString()"
+              (click)="selecionarSugestao(s.id)">
+              <div>
+                <div class="sugestao-nome">{{ i+1 }}. {{ s.nome }}</div>
+                <div class="sugestao-justif">{{ s.justificativa }}</div>
+                <div class="sugestao-meta">
+                  <span *ngIf="s.bairrosAlcancaveis > 0">🔗 {{ s.bairrosAlcancaveis }} bairro(s)</span>
+                  <span *ngIf="s.ocorrenciasNoBairro > 0">📊 {{ s.ocorrenciasNoBairro }} ocorrência(s)</span>
+                  <span *ngIf="s.tempoMedioResposta > 0">⏱️ {{ s.tempoMedioResposta.toFixed(1) }} min</span>
+                </div>
+              </div>
+              <span *ngIf="formData.idBairroBase === s.id.toString()">✓</span>
+            </button>
+          </div>
+        </div>
+        <app-autocomplete-select
+          [options]="bairros"
+          [placeholder]="'Digite ou selecione o bairro base...'"
+          [getOptionLabel]="getOptionLabelBairro"
+          [getOptionValue]="getOptionValueBairro"
+          [required]="true"
+          (valueChange)="formData.idBairroBase = $event">
+        </app-autocomplete-select>
+        <small class="form-helper">Bairro onde a ambulância está estacionada (ponto de partida)</small>
+      </div>
+      <div *ngIf="error" class="form-error">{{ error }}</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Criar</button>
+      </div>
+    </form>
+  </div>
+</div>

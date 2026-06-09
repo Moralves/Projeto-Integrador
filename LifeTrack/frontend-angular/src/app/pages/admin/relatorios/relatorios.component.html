@@ -1,0 +1,61 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1 class="page-title">Relatório de Ocorrências</h1>
+    <button class="btn btn-primary" (click)="carregarRelatorio()">🔄 Atualizar</button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="loading-box">Carregando relatório...</div>
+
+  <div *ngIf="!loading" class="table-card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr>
+          <th>ID</th><th>Data/Hora</th><th>Bairro</th><th>Tipo</th><th>Gravidade</th>
+          <th>Status</th><th>Registrado por</th><th>Despachado por</th>
+          <th>Data Despacho</th><th>Ambulância</th><th>Dist. (km)</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngIf="dados.length === 0"><td colspan="11" style="text-align:center;padding:40px;color:#6b7280">Nenhuma ocorrência encontrada.</td></tr>
+          <tr *ngFor="let item of dados">
+            <td class="text-muted">#{{ item.id }}</td>
+            <td style="white-space:nowrap">{{ formatarData(item.dataHoraAbertura) }}</td>
+            <td>{{ item.bairroNome || '-' }}</td>
+            <td>{{ item.tipoOcorrencia }}</td>
+            <td>
+              <span class="badge"
+                [style.backgroundColor]="getGravidadeConfig(item.gravidade).bg"
+                [style.color]="getGravidadeConfig(item.gravidade).color">
+                {{ item.gravidade }}
+              </span>
+            </td>
+            <td>
+              <span class="badge"
+                [style.backgroundColor]="getStatusConfig(item.status).bg"
+                [style.color]="getStatusConfig(item.status).color">
+                {{ getStatusConfig(item.status).text }}
+              </span>
+            </td>
+            <td>
+              <div *ngIf="item.usuarioRegistroNome; else dash1">
+                <div style="font-weight:600">{{ item.usuarioRegistroNome }}</div>
+                <div style="font-size:0.8rem;color:#6b7280">{{ item.usuarioRegistroLogin }}</div>
+              </div>
+              <ng-template #dash1>-</ng-template>
+            </td>
+            <td>
+              <div *ngIf="item.usuarioDespachoNome; else dash2">
+                <div style="font-weight:600">{{ item.usuarioDespachoNome }}</div>
+                <div style="font-size:0.8rem;color:#6b7280">{{ item.usuarioDespachoLogin }}</div>
+              </div>
+              <ng-template #dash2>-</ng-template>
+            </td>
+            <td style="white-space:nowrap">{{ formatarData(item.dataHoraDespacho) }}</td>
+            <td>{{ item.ambulanciaPlaca || '-' }}</td>
+            <td>{{ item.distanciaKm ? (item.distanciaKm | number:'1.2-2') : '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

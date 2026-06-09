@@ -1,0 +1,68 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1 class="page-title">Análise Estratégica de Posicionamento</h1>
+    <button class="btn btn-primary" (click)="carregarAnalise()">🔄 Atualizar</button>
+  </div>
+
+  <div class="info-box">
+    <h3 style="margin:0 0 8px 0;color:#2c5aa0">📊 Sobre esta análise</h3>
+    <p style="margin:0;font-size:0.9rem">
+      Esta análise sugere os melhores bairros para posicionar novas ambulâncias, considerando o número de
+      ocorrências, tempo médio de resposta calculado com Dijkstra, e a quantidade de ambulâncias já existentes.
+    </p>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="loading-box">Carregando análise estratégica...</div>
+
+  <div *ngIf="!loading" class="table-card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr>
+          <th>Prioridade</th><th>Bairro</th><th>Justificativa</th>
+          <th>Conexões Diretas</th><th>Ocorrências</th><th>Tempo Médio</th><th>Ambulâncias</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngIf="bairrosSugeridos.length === 0">
+            <td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Nenhum bairro encontrado para análise.</td>
+          </tr>
+          <tr *ngFor="let b of bairrosSugeridos; let i = index">
+            <td>
+              <span class="badge" [style.backgroundColor]="getPrioridadeBadge(i).bg" [style.color]="getPrioridadeBadge(i).color">
+                {{ getPrioridadeBadge(i).text }}
+              </span>
+            </td>
+            <td><strong>{{ b.nome }}</strong></td>
+            <td style="font-size:0.875rem;color:#4b5563">{{ b.justificativa || 'Bairro estratégico para expansão' }}</td>
+            <td>
+              <span *ngIf="b.bairrosAlcancaveis > 0" class="badge"
+                [style.backgroundColor]="getConexoesBadge(b.bairrosAlcancaveis).bg"
+                [style.color]="getConexoesBadge(b.bairrosAlcancaveis).color">
+                🔗 {{ b.bairrosAlcancaveis }} conexão(ões)
+              </span>
+              <span *ngIf="!b.bairrosAlcancaveis || b.bairrosAlcancaveis === 0" class="text-muted">0 conexões</span>
+            </td>
+            <td>
+              <span class="badge" [style.backgroundColor]="b.ocorrenciasNoBairro > 0 ? '#fef3c7' : '#f3f4f6'" style="color:#374151">
+                📊 {{ b.ocorrenciasNoBairro }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="b.tempoMedioResposta > 0" class="badge"
+                [style.backgroundColor]="b.tempoMedioResposta < 15 ? '#d1fae5' : '#fee2e2'"
+                [style.color]="b.tempoMedioResposta < 15 ? '#065f46' : '#991b1b'">
+                ⏱️ {{ b.tempoMedioResposta.toFixed(1) }} min
+              </span>
+              <span *ngIf="!b.tempoMedioResposta || b.tempoMedioResposta === 0" class="text-muted">-</span>
+            </td>
+            <td>
+              <span class="badge" [style.backgroundColor]="b.ambulanciasExistentes === 0 ? '#fee2e2' : '#f3f4f6'" style="color:#374151">
+                🚑 {{ b.ambulanciasExistentes }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

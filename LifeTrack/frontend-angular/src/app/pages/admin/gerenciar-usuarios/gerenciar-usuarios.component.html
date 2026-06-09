@@ -1,0 +1,81 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1 class="page-title">Gerenciamento de Usuários</h1>
+    <button class="btn btn-primary" (click)="openModal()">+ Novo Usuário</button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="loading-box">Carregando usuários...</div>
+
+  <div *ngIf="!loading" class="table-card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr>
+          <th>ID</th><th>Usuário</th><th>Nome</th><th>Email</th>
+          <th>Telefone</th><th>Roles</th><th>Status</th><th>Ações</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngIf="usuarios.length === 0"><td colspan="8" style="text-align:center;padding:40px;color:#6b7280">Nenhum usuário cadastrado</td></tr>
+          <tr *ngFor="let u of usuarios">
+            <td class="text-muted">{{ u.id }}</td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.nome }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.telefone || '-' }}</td>
+            <td><span class="badge badge-info">{{ rolesText(u) }}</span></td>
+            <td>
+              <span class="badge" [class.badge-ativo]="u.ativo" [class.badge-inativo]="!u.ativo">
+                {{ u.ativo ? 'Ativo' : 'Inativo' }}
+              </span>
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn btn-sm btn-secondary" (click)="openModal(u)">Editar</button>
+                <button class="btn btn-sm" [class.btn-danger]="u.ativo" [class.btn-success]="!u.ativo" (click)="handleToggleStatus(u.id)">
+                  {{ u.ativo ? 'Desativar' : 'Ativar' }}
+                </button>
+                <button class="btn btn-sm btn-danger" (click)="handleDelete(u.id)">Deletar</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ editingUsuario ? 'Editar Usuário' : 'Novo Usuário' }}</h2>
+      <button class="btn-close-icon" (click)="closeModal()">×</button>
+    </div>
+    <form (ngSubmit)="handleSubmit()">
+      <div class="form-group">
+        <label class="form-label">Usuário *</label>
+        <input class="form-input" type="text" [(ngModel)]="formData.username" name="username" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha {{ editingUsuario ? '(deixe em branco para manter)' : '*' }}</label>
+        <input class="form-input" type="password" [(ngModel)]="formData.password" name="password" [required]="!editingUsuario" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nome Completo *</label>
+        <input class="form-input" type="text" [(ngModel)]="formData.nome" name="nome" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input class="form-input" type="email" [(ngModel)]="formData.email" name="email" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Telefone *</label>
+        <input class="form-input" type="tel" [(ngModel)]="formData.telefone" name="telefone" placeholder="(00) 00000-0000" required />
+      </div>
+      <div *ngIf="error" class="form-error">{{ error }}</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">{{ editingUsuario ? 'Atualizar' : 'Criar' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
