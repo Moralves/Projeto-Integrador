@@ -1,0 +1,104 @@
+<div class="modal-overlay" (click)="fechar.emit()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2>🔍 Ambulâncias Sugeridas</h2>
+      <button class="btn-close" (click)="fechar.emit()">×</button>
+    </div>
+
+    <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+    <div *ngIf="loading" class="state-box">Carregando sugestões...</div>
+
+    <div *ngIf="!loading && sugestoes.length === 0" class="state-box">
+      <p>Nenhuma ambulância disponível encontrada.</p>
+      <p class="text-muted">Verifique se há ambulâncias disponíveis com equipe completa.</p>
+    </div>
+
+    <ng-container *ngIf="!loading && sugestoes.length > 0">
+      <div class="info-box">
+        <p>
+          <strong>💡 Informação:</strong> As ambulâncias são ordenadas por distância calculada pelo
+          <strong>algoritmo Dijkstra</strong> (menor primeiro). O sistema escolherá automaticamente a melhor opção ao despachar.
+        </p>
+        <p>
+          <strong>🧭 Sobre o Dijkstra:</strong> O algoritmo analisa todas as rotas possíveis na rede viária e seleciona
+          o caminho mais curto entre o bairro base da ambulância e o local da ocorrência.
+        </p>
+      </div>
+
+      <div class="sugestoes-list">
+        <div *ngFor="let s of sugestoes; let i = index"
+          class="sugestao-card"
+          [class.sugestao-top]="i === 0">
+
+          <div class="sugestao-header">
+            <div class="sugestao-info">
+              <div class="sugestao-badges">
+                <span class="badge"
+                  [style.backgroundColor]="getTipoBadge(s.tipo).bg"
+                  [style.color]="getTipoBadge(s.tipo).color">
+                  {{ getTipoBadge(s.tipo).text }}
+                </span>
+                <span class="sugestao-placa">{{ s.placa }}</span>
+                <span *ngIf="i === 0" class="badge-recommended">🥇 Recomendada</span>
+              </div>
+              <div class="text-muted">📍 Bairro Base: <strong>{{ s.bairroBase }}</strong></div>
+            </div>
+          </div>
+
+          <div class="sugestao-metrics">
+            <div class="metric">
+              <div class="metric-label">Distância</div>
+              <div class="metric-value">📏 {{ s.distanciaKm.toFixed(2) }} km</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Tempo Estimado</div>
+              <div class="metric-value">⏱️ {{ s.tempoEstimadoMinutos }} min</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Status SLA</div>
+              <span class="badge"
+                [style.backgroundColor]="getSlaBadge(s.dentroSLA, s.slaMinutos).bg"
+                [style.color]="getSlaBadge(s.dentroSLA, s.slaMinutos).color">
+                {{ getSlaBadge(s.dentroSLA, s.slaMinutos).text }}
+              </span>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Equipe</div>
+              <span class="badge"
+                [style.backgroundColor]="s.equipeCompleta ? '#d1fae5' : '#fee2e2'"
+                [style.color]="s.equipeCompleta ? '#065f46' : '#991b1b'">
+                {{ s.statusEquipe }}
+              </span>
+            </div>
+          </div>
+
+          <div class="sugestao-justificativa" [class.justificativa-top]="i === 0">
+            <div class="justificativa-label">🧭 Justificativa (Algoritmo Dijkstra):</div>
+            <div *ngIf="i === 0" class="justificativa-text text-green">
+              <strong>
+                Esta é a ambulância mais próxima calculada pelo algoritmo Dijkstra, encontrando o caminho mais curto através da rede viária.
+                Com {{ s.distanciaKm.toFixed(2) }} km e tempo estimado de {{ s.tempoEstimadoMinutos }} minutos,
+                {{ s.dentroSLA ? 'está dentro do SLA' : 'pode atender dentro do prazo' }} de {{ s.slaMinutos }} minutos.
+              </strong>
+            </div>
+            <div *ngIf="i > 0" class="justificativa-text">
+              Ambulância posicionada a {{ s.distanciaKm.toFixed(2) }} km do local da ocorrência, calculado pelo algoritmo Dijkstra.
+              Tempo estimado: {{ s.tempoEstimadoMinutos }} minutos {{ s.dentroSLA ? '(dentro do SLA)' : '(fora do SLA)' }}.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="fechar.emit()">Cancelar</button>
+        <button class="btn btn-success"
+          [disabled]="despachando || sugestoes.length === 0"
+          (click)="handleDespachar()">
+          {{ despachando ? 'Despachando...' : '🚑 Despachar Ocorrência' }}
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</div>

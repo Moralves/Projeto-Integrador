@@ -1,0 +1,127 @@
+<div class="listar-page">
+  <div class="page-header">
+    <h1 class="page-title">Ocorrências Registradas</h1>
+    <button class="btn btn-primary" (click)="carregarOcorrencias()">🔄 Atualizar</button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <!-- Filtros -->
+  <div class="filtros-card">
+    <div class="filtros-grid">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" [(ngModel)]="filtroStatus">
+          <option value="TODAS">Todas</option>
+          <option value="ABERTA">Abertas</option>
+          <option value="DESPACHADA">Despachadas</option>
+          <option value="EM_ATENDIMENTO">Em Atendimento</option>
+          <option value="CONCLUIDA">Concluídas</option>
+          <option value="CANCELADA">Canceladas</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gravidade</label>
+        <select class="form-select" [(ngModel)]="filtroGravidade">
+          <option value="TODAS">Todas</option>
+          <option value="BAIXA">Baixa</option>
+          <option value="MEDIA">Média</option>
+          <option value="ALTA">Alta</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Buscar</label>
+        <input type="text" class="form-input" [(ngModel)]="busca" placeholder="Buscar por tipo ou bairro..." />
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="state-box">Carregando ocorrências...</div>
+
+  <!-- Empty -->
+  <div *ngIf="!loading && ocorrenciasFiltradas.length === 0" class="state-box">
+    Nenhuma ocorrência encontrada.
+  </div>
+
+  <!-- Tabela -->
+  <div *ngIf="!loading && ocorrenciasFiltradas.length > 0" class="table-card">
+    <div class="table-wrapper">
+      <table class="ocorrencias-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Data/Hora</th>
+            <th>Bairro</th>
+            <th>Tipo</th>
+            <th>Gravidade</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let oc of ocorrenciasFiltradas">
+            <!-- Linha principal -->
+            <tr>
+              <td class="text-muted">#{{ oc.id }}</td>
+              <td>{{ formatarData(oc.dataHoraAbertura) }}</td>
+              <td>{{ oc.bairroLocal?.nome || '-' }}</td>
+              <td>{{ oc.tipoOcorrencia }}</td>
+              <td>
+                <span class="badge"
+                  [style.backgroundColor]="getGravidadeConfig(oc.gravidade).bg"
+                  [style.color]="getGravidadeConfig(oc.gravidade).color">
+                  {{ oc.gravidade }}
+                </span>
+              </td>
+              <td>
+                <span class="badge"
+                  [style.backgroundColor]="getStatusConfig(oc.status).bg"
+                  [style.color]="getStatusConfig(oc.status).color">
+                  {{ getStatusConfig(oc.status).text }}
+                </span>
+              </td>
+              <td>
+                <div *ngIf="oc.status === 'ABERTA'" class="actions-cell">
+                  <button class="btn btn-sm btn-primary" (click)="mostrarSugestoes = oc.id">
+                    🔍 Ver Sugestões
+                  </button>
+                  <button class="btn btn-sm btn-success"
+                    [disabled]="despachando === oc.id"
+                    (click)="handleDespachar(oc.id)">
+                    {{ despachando === oc.id ? 'Despachando...' : '🚑 Despachar' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- SLA Timer -->
+            <tr *ngIf="showSlaTimer(oc.status)">
+              <td colspan="7" class="sub-row">
+                <app-sla-timer [ocorrenciaId]="oc.id" [status]="oc.status"></app-sla-timer>
+              </td>
+            </tr>
+
+            <!-- Histórico -->
+            <tr *ngIf="showHistorico(oc.status)">
+              <td colspan="7" class="sub-row">
+                <app-historico-ocorrencia
+                  [ocorrenciaId]="oc.id"
+                  [atualizarEmTempoReal]="oc.status !== 'CONCLUIDA'">
+                </app-historico-ocorrencia>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Sugestões -->
+<app-sugerir-ambulancias
+  *ngIf="mostrarSugestoes"
+  [ocorrenciaId]="mostrarSugestoes"
+  (despachar)="onDespacharAposSugestao()"
+  (fechar)="mostrarSugestoes = null">
+</app-sugerir-ambulancias>
