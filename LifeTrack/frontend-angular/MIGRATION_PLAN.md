@@ -26,29 +26,28 @@ A migração foi dividida em um roteiro orientado a commits para garantir um his
 - Criar interfaces TypeScript para as entidades baseadas nos serviços atuais (`Usuario`, `Ocorrencia`, `Ambulancia`, etc).
 - Configurar o `provideHttpClient` global no `app.config.ts`.
 
-### Commit 3: Migração da Camada de Serviços [EM ANDAMENTO]
+### Commit 3: Migração da Camada de Serviços [CONCLUÍDO]
 **Objetivo**: Portar as chamadas de API para Angular Services.
 - Configurado o Interceptor de Autenticação (`auth.interceptor.ts`).
-- Migrados: `AuthService`, `OcorrenciaService`.
-- A migrar: `Ambulancia`, `Equipe`, `Profissional`, `Usuario`, etc.
+- Migrados todos os serviços: `Auth`, `Ocorrencia`, `Ambulancia`, `Equipe`, `Profissional`, `Usuario`, `Bairro`, `Historico`, `AnaliseEstrategica`, `Relatorio`.
 
-### Commit 4: Componentes Compartilhados (Shared)
+### Commit 4: Componentes Compartilhados (Shared) [CONCLUÍDO]
 **Objetivo**: Migrar componentes visuais reutilizáveis.
 - Migrar `SLATimer.jsx` → `sla-timer.component`.
 - Migrar `HistoricoOcorrencia.jsx` → `historico-ocorrencia.component`.
 - Migrar `AutocompleteSelect.jsx` → `autocomplete-select.component`.
 
-### Commit 5: Autenticação, Layouts e Guards
+### Commit 5: Autenticação, Layouts e Guards [CONCLUÍDO]
 **Objetivo**: Estruturar a fundação visual (cascas) e a segurança de rotas.
 - Migrar `Login.jsx` → `login.component`.
 - Migrar `AdminLayout.jsx` e `OperatorLayout.jsx` com `<router-outlet>`.
 - Criar Route Guards para rotas admin e operador.
 
-### Commit 6: Área do Operador (Features)
+### Commit 6: Área do Operador (Features) [CONCLUÍDO]
 **Objetivo**: Migrar as telas específicas do perfil de Operador.
 - Migrar `RegistrarOcorrencia`, `ListarOcorrencias`, `SugerirAmbulancias`.
 
-### Commit 7: Área do Administrador (Features)
+### Commit 7: Área do Administrador (Features) [CONCLUÍDO]
 **Objetivo**: Migrar as telas gerenciais e os CRUDs completos.
 - Migrar painéis de gerência (`Ambulancias`, `Equipes`, `Funcionarios`, `Usuarios`, `Relatorios`).
 
