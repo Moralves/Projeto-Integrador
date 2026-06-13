@@ -102,8 +102,9 @@ public class EquipeServico {
         equipe.setAmbulancia(ambulancia);
         equipe.setDescricao(descricao);
         equipe.setAtiva(true);
-        equipeRepositorio.save(equipe);
 
+        // IMPORTANTE: NÃO salvar equipe vazia aqui para evitar conflitos de cascata
+        // Adicionar todos os profissionais à equipe em memória primeiro
         for (Long idProf : idsProfissionais) {
             Profissional p = profissionalRepositorio.findById(idProf)
                     .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
@@ -113,14 +114,15 @@ public class EquipeServico {
             ep.setProfissional(p);
             equipe.getProfissionais().add(ep);
             
-            // Marcar profissional como disponível (já está na equipe, mas ainda não em atendimento)
-            // O status será alterado para EM_ATENDIMENTO quando a equipe for despachada
+            // IMPORTANTE: NÃO salvar profissional aqui - deixar o cascade fazer isso
+            // Apenas alterar o status em memória
             if (p.getStatus() != StatusProfissional.DISPONIVEL) {
                 p.setStatus(StatusProfissional.DISPONIVEL);
-                profissionalRepositorio.save(p);
+                // Não fazer save aqui! O cascade do equipeRepositorio.save() vai fazer
             }
         }
 
+        // Salvar APENAS UMA VEZ - o cascade vai salvar tudo
         return equipeRepositorio.save(equipe);
     }
 
@@ -224,10 +226,10 @@ public class EquipeServico {
                 ep.setProfissional(p);
                 equipe.getProfissionais().add(ep);
 
-                // Marcar profissional como disponível
+                // Marcar profissional como disponível em memória
+                // NÃO fazer save aqui - deixar o cascade fazer isso ao final
                 if (p.getStatus() != StatusProfissional.DISPONIVEL) {
                     p.setStatus(StatusProfissional.DISPONIVEL);
-                    profissionalRepositorio.save(p);
                 }
             }
         }
