@@ -36,7 +36,7 @@ if (Test-Path $jarPath) {
 Write-Host "[3/3] Iniciando aplicacao..." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  Backend iniciando em http://localhost:8080" -ForegroundColor Green
+Write-Host "  Backend iniciando em http://localhost:8081" -ForegroundColor Green
 Write-Host "  Pressione Ctrl+C para parar" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""

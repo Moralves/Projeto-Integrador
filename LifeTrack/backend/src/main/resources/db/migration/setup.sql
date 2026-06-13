@@ -626,11 +626,11 @@ END $$;
 INSERT INTO usuarios (login, senha_hash, perfil, nome, email, ativo)
 VALUES (
     'admin',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2a$10$wgJ3.c200I3ElJtyjUZ3h.ZKapxAexbWT9r6.eypOjp8GvpleCt5m',
     'ADMIN',
     'Administrador',
     'admin@sistema.local',
     true
 )
-ON CONFLICT (login) DO NOTHING;
+ON CONFLICT (login) DO UPDATE SET senha_hash = EXCLUDED.senha_hash, ativo = true;
 

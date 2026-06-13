@@ -62,6 +62,17 @@ CREATE TABLE IF NOT EXISTS equipe_profissional (
     UNIQUE(id_equipe, id_profissional)
 );
 
+-- Tabela de usuários (para futura autenticação)
+CREATE TABLE IF NOT EXISTS usuarios (
+    id BIGSERIAL PRIMARY KEY,
+    login VARCHAR(100) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,
+    perfil VARCHAR(50) NOT NULL,
+    nome VARCHAR(255),
+    email VARCHAR(255),
+    ativo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
 -- Tabela de ocorrências
 CREATE TABLE IF NOT EXISTS ocorrencias (
     id BIGSERIAL PRIMARY KEY,
@@ -93,17 +104,6 @@ CREATE TABLE IF NOT EXISTS atendimentos (
     FOREIGN KEY (id_ocorrencia) REFERENCES ocorrencias(id),
     FOREIGN KEY (id_ambulancia) REFERENCES ambulancias(id),
     FOREIGN KEY (id_usuario_despacho) REFERENCES usuarios(id)
-);
-
--- Tabela de usuários (para futura autenticação)
-CREATE TABLE IF NOT EXISTS usuarios (
-    id BIGSERIAL PRIMARY KEY,
-    login VARCHAR(100) NOT NULL UNIQUE,
-    senha_hash VARCHAR(255) NOT NULL,
-    perfil VARCHAR(50) NOT NULL,
-    nome VARCHAR(255),
-    email VARCHAR(255),
-    ativo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Tabela de histórico de ocorrências

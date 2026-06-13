@@ -42,7 +42,26 @@ LifeTrack/
 
 ## 🚀 Como Executar o Projeto Localmente
 
-Para rodar a aplicação completa, é necessário iniciar ambos os serviços (Backend e Frontend).
+Para rodar a aplicação completa, é necessário configurar o banco de dados e iniciar ambos os serviços (Backend e Frontend).
+
+### Pré-requisito: Configuração do Banco de Dados (PostgreSQL via DBeaver)
+
+O sistema utiliza PostgreSQL. Siga os passos para provisionar o banco de dados localmente usando o DBeaver:
+
+1. **Abra o DBeaver** e clique no ícone **"Nova Conexão"** (tomada no canto superior esquerdo).
+2. Selecione **PostgreSQL** e clique em Avançar.
+3. Preencha as credenciais padrão do ambiente local (conforme `application.properties`):
+   - **Host:** `localhost`
+   - **Porta:** `5432`
+   - **Database:** `postgres` (banco default apenas para conectar a primeira vez)
+   - **Username:** `postgres`
+   - **Password:** `5432`
+4. Clique em **Testar Conexão** para baixar os drivers (se solicitado) e garantir que o PostgreSQL está respondendo. Depois clique em **Concluir**.
+5. No painel esquerdo, expanda a conexão recém-criada, clique com o botão direito em **Databases** > **Create New Database**.
+6. No campo **Database Name**, digite exatamente: **`pi_2025_2`** e clique em OK.
+7. *Pronto!* Não é necessário rodar scripts de criação de tabelas. O Hibernate (Spring Boot) está configurado com `ddl-auto=update` e criará toda a estrutura relacional automaticamente ao rodar o backend.
+
+---
 
 ### 1. Executando o Backend (Spring Boot)
 Certifique-se de ter o **Java (JDK 17+)** e o **Maven** instalados.
@@ -52,11 +71,12 @@ Certifique-se de ter o **Java (JDK 17+)** e o **Maven** instalados.
    cd backend
    ```
 2. Instale as dependências e inicie a aplicação:
-   ```bash
-   mvn clean install
-   mvn spring-boot:run
+   ```cmd
+   .\mvnw.cmd clean install -DskipTests
+   .\mvnw.cmd spring-boot:run
    ```
-   *Alternativamente, no Windows, utilize o script fornecido:* `.\rodar.ps1`
+   *Alternativamente, no Windows (PowerShell), caso ocorra erro de execução de script, utilize:*
+   `powershell -ExecutionPolicy Bypass -File .\rodar.ps1`
 3. A API estará disponível em `http://localhost:8081`.
 
 ### 2. Executando o Frontend (Angular)
@@ -76,6 +96,28 @@ Certifique-se de ter o **Node.js (v18+)** e o **Angular CLI** instalados.
    ```
    *Ou diretamente via Angular CLI:* `ng serve`
 4. Acesse a aplicação no navegador através de `http://localhost:4200`.
+
+---
+
+### 3. Acesso ao Sistema e Criação de Usuários
+
+O sistema já é inicializado com um usuário administrador padrão:
+- **Login:** `admin`
+- **Senha:** `admin123`
+
+#### Como criar perfis Staff (Operadores/Usuários)
+A criação de novos usuários com perfil padrão (`USER` / staff) é feita via API (podendo ser integrada pela interface). Apenas administradores não podem ser criados via endpoint por segurança.
+- **Endpoint:** `POST http://localhost:8081/api/usuarios`
+- **Corpo da requisição (JSON de Exemplo):**
+  ```json
+  {
+    "username": "operador1",
+    "password": "senhaSegura123",
+    "nome": "João da Silva",
+    "email": "joao@sistema.local",
+    "telefone": "11999999999"
+  }
+  ```
 
 ---
 
