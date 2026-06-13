@@ -1,33 +1,23 @@
-# Backend - Spring Boot
+# Backend
 
-Backend do sistema LifeTrack desenvolvido com Spring Boot 3 + PostgreSQL.
+API Spring Boot do LifeTrack.
 
-## Executar
-
-### Forma mais simples (JAR já compilado):
+## Como executar
 
 ```powershell
 cd LifeTrack\backend
-java -jar target\sos-rota-0.0.1-SNAPSHOT.jar
+.\mvnw.cmd clean spring-boot:run
 ```
 
-✅ Backend rodando em: **http://localhost:8080**
+## Porta
 
-### Se precisar recompilar:
+- `http://localhost:8081`
 
-```powershell
-# Com Maven instalado:
-mvn clean install
-java -jar target\sos-rota-0.0.1-SNAPSHOT.jar
+## Configuração importante
 
-# Ou diretamente:
-mvn spring-boot:run
-```
+- O banco é configurado em [src/main/resources/application.properties](src/main/resources/application.properties).
+- O backend usa Java 17 e PostgreSQL.
 
-## Configuração
+## Observação
 
-Edite `src/main/resources/application.properties` com suas credenciais do PostgreSQL.
-
----
-
-**Para mais detalhes, consulte o README.md na raiz do projeto.**
+Este arquivo é apenas uma referência curta. O guia oficial do projeto está em [../README.md](../README.md).

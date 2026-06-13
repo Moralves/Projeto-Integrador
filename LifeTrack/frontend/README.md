@@ -1,16 +1,31 @@
-# LifeTrack Frontend (Angular)
+# Frontend
 
-Este é o novo projeto frontend para a aplicação LifeTrack, migrado para Angular (Standalone Components + CSS Nativo).
+Aplicação Angular do LifeTrack.
 
-## Comandos Úteis
+## Como executar
 
-- **Servidor de Desenvolvimento**: Execute `npm run start` ou `ng serve` para rodar localmente. Acesse `http://localhost:4200/`.
-- **Build de Produção**: Execute `npm run build` ou `ng build`.
-- **Gerar Componentes**: `ng generate component path/to/component-name`
+```powershell
+cd LifeTrack\frontend
+npm install
+npm start
+```
 
-## Estrutura do Projeto
+## Porta
 
-- `/src/app/core`: Serviços isolados, interceptors e modelos de dados (TypeScript).
-- `/src/app/shared`: Componentes visuais compartilhados em todo o projeto.
-- `/src/app/features`: Módulos ou páginas específicas separadas por contexto (ex: `admin`, `operador`, `auth`).
-- `/src/app/layout`: Componentes de estrutura principal das páginas (ex: Navbars e Cascas das rotas).
+- `http://localhost:4200`
+
+## Comandos úteis
+
+- `npm run build` para gerar build de produção.
+- `npm run test` para executar os testes, quando configurados.
+
+## Estrutura principal
+
+- `src/app/core` para serviços, guards, interceptors e modelos.
+- `src/app/layouts` para layouts base da aplicação.
+- `src/app/pages` para páginas roteáveis por domínio.
+- `src/app/shared` para componentes reutilizáveis.
+
+## Observação
+
+Este arquivo é apenas uma referência curta. O guia oficial do projeto está em [../README.md](../README.md).
