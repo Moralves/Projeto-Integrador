@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -24,10 +25,14 @@ export class LoginComponent {
     this.error = '';
     this.loading = true;
 
-    this.authService.login({ login: this.login, senha: this.senha }).subscribe({
+    this.authService.login({ login: this.login, senha: this.senha }).pipe(
+      finalize(() => {
+        this.loading = false;
+      })
+    ).subscribe({
       next: (res) => {
-        const user = this.authService.getUsuarioLogado();
-        if (user?.role === 'ADMIN') {
+        const user = this.authService.getUsuarioLogado() ?? res.user;
+        if (user?.role === 'ADMIN' || user?.perfil === 'ADMIN') {
           this.router.navigate(['/admin']);
         } else {
           this.router.navigate(['/operador']);
@@ -35,7 +40,6 @@ export class LoginComponent {
       },
       error: (err) => {
         this.error = err.error?.message || err.message || 'Erro ao fazer login. Verifique suas credenciais.';
-        this.loading = false;
       }
     });
   }

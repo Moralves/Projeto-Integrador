@@ -32,6 +32,13 @@ export class SugerirAmbulanciasComponent implements OnInit, OnChanges {
   }
 
   carregarSugestoes() {
+    if (!this.ocorrenciaId) {
+      this.sugestoes = [];
+      this.error = '';
+      this.loading = false;
+      return;
+    }
+
     this.loading = true;
     this.error = '';
     this.ocorrenciaService.sugerirAmbulancias(this.ocorrenciaId).subscribe({

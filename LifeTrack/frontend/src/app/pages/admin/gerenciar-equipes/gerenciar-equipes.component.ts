@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { EquipeService } from '../../../core/services/equipe.service';
 import { AmbulanciaService } from '../../../core/services/ambulancia.service';
 import { ProfissionalService } from '../../../core/services/profissional.service';
@@ -38,33 +38,41 @@ export class GerenciarEquipesComponent implements OnInit {
       profissionais: incluirTodos ? this.profissionalService.listar() : this.profissionalService.listarDisponiveis()
     }).subscribe({
       next: async ({ equipes, ambulancias, profissionais }) => {
-        this.equipes = equipes;
-        this.ambulancias = ambulancias;
+        try {
+          this.equipes = equipes;
+          this.ambulancias = ambulancias;
 
-        // Filtrar profissionais ativos
-        let filtrados = profissionais.filter((p: any) => p.ativo);
-        if (!incluirTodos) {
-          const emEquipes = new Set<number>();
-          equipes.forEach((eq: any) => {
-            if (eq.ativa && eq.profissionais) {
-              eq.profissionais.forEach((ep: any) => { if (ep.profissional?.id) emEquipes.add(ep.profissional.id); });
-            }
-          });
-          filtrados = filtrados.filter((p: any) => !emEquipes.has(p.id));
-        }
-        this.profissionais = filtrados;
+          // Filtrar profissionais ativos
+          let filtrados = profissionais.filter((p: any) => p.ativo);
+          if (!incluirTodos) {
+            const emEquipes = new Set<number>();
+            equipes.forEach((eq: any) => {
+              if (eq.ativa && eq.profissionais) {
+                eq.profissionais.forEach((ep: any) => { if (ep.profissional?.id) emEquipes.add(ep.profissional.id); });
+              }
+            });
+            filtrados = filtrados.filter((p: any) => !emEquipes.has(p.id));
+          }
+          this.profissionais = filtrados;
 
-        // Verificar status de cada equipe
-        const statusMap: Record<number, boolean> = {};
-        for (const eq of equipes) {
-          try {
-            const emAtendimento = await this.equipeService.verificarStatus(eq.id as number).toPromise();
-            statusMap[eq.id as number] = !!emAtendimento;
-          } catch { statusMap[eq.id as number] = false; }
+          const statusEntries = await Promise.all(
+            equipes.map(async (eq: any) => {
+              try {
+                const emAtendimento = await firstValueFrom(this.equipeService.verificarStatus(eq.id as number));
+                return [eq.id as number, !!emAtendimento] as const;
+              } catch {
+                return [eq.id as number, false] as const;
+              }
+            })
+          );
+
+          this.equipesStatus = Object.fromEntries(statusEntries);
+          this.error = '';
+        } catch (e: any) {
+          this.error = 'Erro ao carregar dados: ' + (e?.message || e);
+        } finally {
+          this.loading = false;
         }
-        this.equipesStatus = statusMap;
-        this.error = '';
-        this.loading = false;
       },
       error: (e) => { this.error = 'Erro ao carregar dados: ' + (e.message || e); this.loading = false; }
     });

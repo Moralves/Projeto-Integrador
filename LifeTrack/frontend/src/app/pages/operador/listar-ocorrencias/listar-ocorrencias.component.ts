@@ -30,30 +30,49 @@ export class ListarOcorrenciasComponent implements OnInit, OnDestroy {
   busca = '';
   despachando: number | null = null;
   mostrarSugestoes: number | null = null;
+  refreshing = false;
 
   private ocorrenciaService = inject(OcorrenciaService);
   private datePipe = inject(DatePipe);
   private refreshSubscription?: Subscription;
+  private carregamentoEmAndamento = false;
 
   ngOnInit() {
-    this.carregarOcorrencias();
-    this.refreshSubscription = interval(5000).subscribe(() => this.carregarOcorrencias());
+    this.carregarOcorrencias(true);
+    this.refreshSubscription = interval(30000).subscribe(() => this.carregarOcorrencias(false));
   }
 
   ngOnDestroy() {
     this.refreshSubscription?.unsubscribe();
   }
 
-  carregarOcorrencias() {
+  carregarOcorrencias(forcarLoading = false) {
+    if (this.carregamentoEmAndamento) {
+      return;
+    }
+
+    this.carregamentoEmAndamento = true;
+    const exibindoLoadingInicial = forcarLoading || this.ocorrencias.length === 0;
+
+    if (exibindoLoadingInicial) {
+      this.loading = true;
+    } else {
+      this.refreshing = true;
+    }
+
     this.ocorrenciaService.listar().subscribe({
       next: (dados) => {
         this.ocorrencias = dados;
         this.error = '';
         this.loading = false;
+        this.refreshing = false;
+        this.carregamentoEmAndamento = false;
       },
       error: (err) => {
         this.error = 'Erro ao carregar ocorrências: ' + (err.message || err);
         this.loading = false;
+        this.refreshing = false;
+        this.carregamentoEmAndamento = false;
       }
     });
   }
@@ -76,7 +95,7 @@ export class ListarOcorrenciasComponent implements OnInit, OnDestroy {
     this.ocorrenciaService.despachar(id).subscribe({
       next: () => {
         alert('Ocorrência despachada com sucesso!');
-        this.carregarOcorrencias();
+        this.carregarOcorrencias(true);
       },
       error: (err) => {
         this.error = 'Erro ao despachar: ' + (err.error?.message || err.message);
@@ -88,7 +107,7 @@ export class ListarOcorrenciasComponent implements OnInit, OnDestroy {
 
   onDespacharAposSugestao() {
     this.mostrarSugestoes = null;
-    this.carregarOcorrencias();
+    this.carregarOcorrencias(true);
   }
 
   formatarData(data: any): string {

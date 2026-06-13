@@ -92,4 +92,3 @@ Use estes sinais para confirmar que tudo subiu corretamente:
 
 - [backend/README.md](backend/README.md)
 - [frontend/README.md](frontend/README.md)
-- [GUIA_DE_COMMITS.md](GUIA_DE_COMMITS.md)

@@ -1,7 +1,7 @@
 <div class="listar-page">
   <div class="page-header">
     <h1 class="page-title">Ocorrências Registradas</h1>
-    <button class="btn btn-primary" (click)="carregarOcorrencias()">🔄 Atualizar</button>
+    <button class="btn btn-primary" (click)="carregarOcorrencias(true)">{{ refreshing ? 'Atualizando...' : '🔄 Atualizar' }}</button>
   </div>
 
   <div *ngIf="error" class="alert alert-error">{{ error }}</div>
@@ -107,7 +107,7 @@
               <td colspan="7" class="sub-row">
                 <app-historico-ocorrencia
                   [ocorrenciaId]="oc.id"
-                  [atualizarEmTempoReal]="oc.status !== 'CONCLUIDA'">
+                  [atualizarEmTempoReal]="false">
                 </app-historico-ocorrencia>
               </td>
             </tr>

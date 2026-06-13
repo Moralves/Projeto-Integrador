@@ -1,6 +1,5 @@
 import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { Subscription, interval } from 'rxjs';
 import { HistoricoService } from '../../../core/services/historico.service';
 
 @Component({
@@ -13,14 +12,13 @@ import { HistoricoService } from '../../../core/services/historico.service';
 })
 export class HistoricoOcorrenciaComponent implements OnInit, OnDestroy, OnChanges {
   @Input() ocorrenciaId!: number;
-  @Input() atualizarEmTempoReal: boolean = true;
+  @Input() atualizarEmTempoReal: boolean = false;
 
   historicos: any[] = [];
   loading: boolean = true;
   error: string | null = null;
 
   private historicoService = inject(HistoricoService);
-  private timerSubscription?: Subscription;
   private datePipe = inject(DatePipe);
 
   ngOnInit() {
@@ -34,31 +32,15 @@ export class HistoricoOcorrenciaComponent implements OnInit, OnDestroy, OnChange
   }
 
   ngOnDestroy() {
-    this.pararBusca();
   }
 
   private iniciarBusca() {
-    this.pararBusca();
-
     if (!this.ocorrenciaId) {
       this.loading = false;
       return;
     }
 
     this.carregarHistorico();
-
-    if (this.atualizarEmTempoReal) {
-      this.timerSubscription = interval(3000).subscribe(() => {
-        this.carregarHistorico();
-      });
-    }
-  }
-
-  private pararBusca() {
-    if (this.timerSubscription) {
-      this.timerSubscription.unsubscribe();
-      this.timerSubscription = undefined;
-    }
   }
 
   private carregarHistorico() {

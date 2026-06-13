@@ -1,6 +1,5 @@
 import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription, interval } from 'rxjs';
 import { OcorrenciaService } from '../../../core/services/ocorrencia.service';
 
 @Component({
@@ -21,7 +20,6 @@ export class SlaTimerComponent implements OnInit, OnDestroy, OnChanges {
   etapas: any = { ateDespacho: 0, ateChegada: 0, retorno: 0, total: 0 };
 
   private ocorrenciaService = inject(OcorrenciaService);
-  private timerSubscription?: Subscription;
 
   // Status que devem mostrar o timer
   private readonly statusComTimer = ['ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA'];
@@ -37,30 +35,15 @@ export class SlaTimerComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnDestroy() {
-    this.pararTimer();
   }
 
   private iniciarTimer() {
-    this.pararTimer();
-    
     if (!this.ocorrenciaId || !this.statusComTimer.includes(this.status)) {
       this.loading = false;
       return;
     }
 
     this.carregarTimer();
-
-    // Atualizar a cada 2 segundos sempre (mesmo quando concluída, para mostrar retorno)
-    this.timerSubscription = interval(2000).subscribe(() => {
-      this.carregarTimer();
-    });
-  }
-
-  private pararTimer() {
-    if (this.timerSubscription) {
-      this.timerSubscription.unsubscribe();
-      this.timerSubscription = undefined;
-    }
   }
 
   private carregarTimer() {

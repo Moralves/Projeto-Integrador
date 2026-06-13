@@ -8,7 +8,7 @@ export const operadorGuard: CanActivateFn = (route, state) => {
   
   const user = authService.getUsuarioLogado();
 
-  if (authService.isAuthenticated() && user?.role === 'OPERADOR') {
+  if (authService.isAuthenticated() && (user?.role === 'OPERADOR' || user?.perfil === 'OPERADOR')) {
     return true;
   }
 

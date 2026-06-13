@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -18,7 +18,7 @@ export class HistoricoService {
   buscarMeuHistorico(): Observable<any[]> {
     const user = this.authService.getUsuarioLogado();
     if (!user) {
-      throw new Error('Usuário não autenticado');
+      return throwError(() => new Error('Usuário não autenticado'));
     }
     
     const headers = new HttpHeaders().set('X-User-Id', user.id.toString());
