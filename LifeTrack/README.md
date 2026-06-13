@@ -32,9 +32,36 @@ Se o seu PostgreSQL estiver com outros dados, ajuste esse arquivo antes de inici
 
 O banco do projeto é criado automaticamente pelo Hibernate com `ddl-auto=update`, e o script de inicialização em `db/migration` é executado na inicialização.
 
-## Como rodar
+## Como rodar pela primeira vez
 
-### 1. Backend
+### 0. Antes de tudo
+
+Para o projeto subir de primeira, estes itens precisam existir na máquina:
+
+- Java 17 instalado.
+- Node.js 20 ou superior instalado.
+- npm disponível no terminal.
+- PostgreSQL em execução.
+
+### 1. Prepare o banco antes do backend
+
+O backend **não configura o PostgreSQL sozinho**. Ele tenta conectar nestes dados por padrão:
+
+- Host: `localhost`
+- Porta: `5432`
+- Banco: `postgres`
+- Usuário: `postgres`
+- Senha: `5432`
+
+Essas informações estão em [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties).
+
+Se o seu PostgreSQL usar outro usuário, senha, porta ou nome de banco, ajuste esse arquivo antes de iniciar a API.
+
+Se você quiser usar a configuração padrão do projeto, faça o PostgreSQL aceitar exatamente esses dados primeiro.
+
+### 2. Suba o backend
+
+Depois que o banco estiver acessível, execute:
 
 ```powershell
 cd LifeTrack\backend
@@ -48,9 +75,11 @@ cd LifeTrack\backend
 .\mvnw.cmd clean test
 ```
 
-API disponível em `http://localhost:8081`.
+A API deve ficar disponível em `http://localhost:8081`.
 
-### 2. Frontend
+### 3. Suba o frontend
+
+Em outro terminal:
 
 ```powershell
 cd LifeTrack\frontend
@@ -58,14 +87,28 @@ npm install
 npm start
 ```
 
-Aplicação disponível em `http://localhost:4200`.
+A aplicação deve ficar disponível em `http://localhost:4200`.
 
-### 3. Ordem recomendada
+### 4. Ordem recomendada para não travar
 
-1. Suba o PostgreSQL.
-2. Inicie o backend.
-3. Inicie o frontend.
-4. Acesse a aplicação no navegador.
+1. Inicie o PostgreSQL.
+2. Confira ou ajuste as credenciais em `backend/src/main/resources/application.properties`.
+3. Inicie o backend.
+4. Inicie o frontend.
+5. Acesse a aplicação no navegador.
+
+### 5. Se for a primeira vez no seu computador
+
+Se o banco ainda não estiver pronto, a forma mais simples é:
+
+1. Instalar o PostgreSQL.
+2. Garantir que o serviço esteja rodando.
+3. Criar ou ajustar o usuário e a senha para bater com o arquivo de configuração.
+4. Só então execute o comando abaixo dentro de `backend`:
+
+```powershell
+.\mvnw.cmd clean spring-boot:run
+```
 
 ## Credenciais iniciais
 
