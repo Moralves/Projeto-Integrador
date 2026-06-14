@@ -1,0 +1,101 @@
+================================================================================
+VALIDAÇÕES DE ENTRADA - LINGUAGENS FORMAIS E AUTÔMATOS
+================================================================================
+
+Este documento descreve as validações baseadas em Expressões Regulares (ER) 
+aplicadas no sistema LifeTrack, juntamente com a especificação teórica dos 
+Autômatos Finitos Determinísticos (AFD) correspondentes.
+
+--------------------------------------------------------------------------------
+1. TABELA DAS ENTRADAS E EXPRESSÕES REGULARES
+--------------------------------------------------------------------------------
+
+| Campo    | Arquivo Afetado           | Expressão Regular (Regex)                                   | Explicação |
+|----------|---------------------------|-------------------------------------------------------------|------------|
+| Placa    | CriarAmbulanciaDTO.java   | ^[A-Z]{3}-?\d[A-Z0-9]\d{2}$                                 | Aceita o formato antigo de placas brasileiras (ex: ABC-1234, obrigando o 5º caractere a ser número) e também o padrão Mercosul (ex: ABC1D23, onde o 5º caractere é uma letra), com o hífen sendo opcional. |
+| Telefone | CriarUsuarioDTO.java      | ^\(\d{2}\) \d{4,5}-\d{4}$                                   | Valida números no formato brasileiro com DDD. O primeiro dígito pode ter 4 ou 5 casas numéricas para englobar fixos e celulares (ex: (11) 98765-4321 ou (11) 3232-4321). |
+| Senha    | CriarUsuarioDTO.java      | ^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$              | Garante senhas fortes usando Lookaheads positivos (?=...). Exige no mínimo 8 caracteres na string inteira, contendo obrigatoriamente ao menos 1 letra e 1 número. |
+
+
+--------------------------------------------------------------------------------
+2. DIAGRAMA LÓGICO DOS 3 AUTÔMATOS (REPRESENTAÇÃO TEXTUAL)
+--------------------------------------------------------------------------------
+
+Autômato 1: Placa de Veículo (Brasil Clássico / Mercosul)
+Alfabeto: Letras maiúsculas [A-Z], Dígitos [0-9], Hífen [-]
+Estados:
+- q0 (inicial): Aguarda a primeira letra [A-Z] -> q1
+- q1: Aguarda a segunda letra [A-Z] -> q2
+- q2: Aguarda a terceira letra [A-Z] -> q3
+- q3: Aguarda hífen (opcional) [-] -> q4 ou Aguarda 1º dígito [0-9] -> q5
+- q4: Aguarda 1º dígito [0-9] -> q5
+- q5: Aguarda caractere alfanumérico (letra para Mercosul, dígito para antigo) [A-Z0-9] -> q6
+- q6: Aguarda 2º dígito [0-9] -> q7
+- q7: Aguarda 3º dígito [0-9] -> q8 (Estado Final de Aceitação)
+
+Autômato 2: Telefone (DDD e Número)
+Alfabeto: Dígitos [0-9], Parênteses [(, )], Espaço [ ], Hífen [-]
+Estados:
+- q0 (inicial): Aguarda parêntese aberto [(] -> q1
+- q1: Aguarda dígito do DDD -> q2
+- q2: Aguarda dígito do DDD -> q3
+- q3: Aguarda parêntese fechado [)] -> q4
+- q4: Aguarda espaço em branco [ ] -> q5
+- q5: Aguarda 1º dígito do prefixo -> q6
+- q6: Aguarda 2º dígito -> q7
+- q7: Aguarda 3º dígito -> q8
+- q8: Aguarda 4º dígito -> q9
+- q9: Aguarda 5º dígito (opcional para celulares) -> q10 ou Aguarda hífen [-] (fixos) -> q11
+- q10: Aguarda hífen [-] -> q11
+- q11: Aguarda 1º dígito do sufixo -> q12
+- q12: Aguarda 2º dígito do sufixo -> q13
+- q13: Aguarda 3º dígito do sufixo -> q14
+- q14: Aguarda 4º dígito do sufixo -> q15 (Estado Final de Aceitação)
+
+Autômato 3: Senha Forte (Versão simplificada do Lookahead)
+Nota: O lookahead no regex intercepta a fita em paralelo. Para construir um AFD clássico (sem paralelismo), 
+a estrutura precisa bifurcar os caminhos dependendo de quem vem primeiro (letra ou número), com 
+transições em loops [A-Za-z\d@$!%*#?&] contabilizando até 8 transições para a aceitação.
+
+Resumo conceitual dos Estados Principais (Ignorando contagem exata de 8 para simplificação do diagrama):
+- q0 (inicial): Lê caractere. Se for Letra -> vai para ramo L (qL). Se for Número -> ramo N (qN).
+- qL: (Estado onde já vimos Letra). Loop aceita letras e símbolos. Se vier Número -> qAmbos.
+- qN: (Estado onde já vimos Número). Loop aceita números e símbolos. Se vier Letra -> qAmbos.
+- qAmbos: (Estado onde já vimos ambos). Loop aceita tudo. 
+  A aceitação só ocorre se estivermos em qAmbos E a contagem total de transições desde q0 for >= 8.
+
+
+--------------------------------------------------------------------------------
+3. TRECHO DO CÓDIGO E EXPLICAÇÃO
+--------------------------------------------------------------------------------
+
+A implementação no Java utiliza a API padrão Jakarta Validation (`@Pattern`) diretamente 
+nos Data Transfer Objects (DTOs), o que garante que qualquer payload JSON contendo 
+estas propriedades passe pela máquina de estados (motor de regex do Java) antes mesmo 
+de entrar nos Serviços da aplicação.
+
+Exemplo em `CriarUsuarioDTO.java`:
+
+```java
+    @NotBlank(message = "A senha é obrigatória")
+    @jakarta.validation.constraints.Pattern(
+        regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{8,}$", 
+        message = "A senha deve ter pelo menos 8 caracteres, contendo letras e números"
+    )
+    private String password;
+
+    @NotBlank(message = "Telefone é obrigatório")
+    @jakarta.validation.constraints.Pattern(
+        regexp = "^\\(\\d{2}\\) \\d{4,5}-\\d{4}$", 
+        message = "O telefone deve estar no formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX"
+    )
+    private String telefone;
+```
+
+Explicação do Motor (Compilador Interno):
+O Java, ao subir o contexto da aplicação (Spring), compila essas Strings 
+de Regex em um grafo de estados equivalente a um AFN (Autômato Finito Não-Determinístico)
+utilizando a classe `java.util.regex.Pattern`. Quando a requisição HTTP chega,
+a string validada passa a ser a Fita de Entrada. O motor avança consumindo 
+caractere a caractere; se o Autômato atingir um estado de rejeição ou chegar ao 
+fim da string fora de um estado de aceitação, ele aborta e lança uma `MethodArgumentNotValidException`.

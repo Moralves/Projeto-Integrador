@@ -10,6 +10,8 @@ public class CriarUsuarioDTO {
     @NotBlank(message = "Username é obrigatório")
     private String username;
 
+    @NotBlank(message = "A senha é obrigatória")
+    @jakarta.validation.constraints.Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{8,}$", message = "A senha deve ter pelo menos 8 caracteres, contendo letras e números")
     private String password;
 
     private String nome;
@@ -17,6 +19,7 @@ public class CriarUsuarioDTO {
     private String email;
 
     @NotBlank(message = "Telefone é obrigatório")
+    @jakarta.validation.constraints.Pattern(regexp = "^\\(\\d{2}\\) \\d{4,5}-\\d{4}$", message = "O telefone deve estar no formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX")
     private String telefone;
 
     public String getUsername() {

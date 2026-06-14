@@ -29,5 +29,32 @@ public class RelatorioControlador {
         // Padrão Template Method: Delega a execução para o gerador que implementa o template
         return geradorRelatorioOcorrencia.gerarRelatorio();
     }
+
+    /**
+     * Endpoint da Consulta Avançada utilizando o Analisador Léxico e Sintático
+     * Requisito: Linguagens Formais e Compiladores
+     * Exemplo query: parametro.tipo="BASICA" AND parametro.status="DISPONIVEL"
+     */
+    @GetMapping("/consulta-avancada")
+    public org.springframework.http.ResponseEntity<?> consultaAvancada(@RequestParam String query) {
+        try {
+            // 1. Análise Léxica (Scanner)
+            com.vitalistech.sosrota.padroes.compiladores.AnalisadorLexico lexer = 
+                new com.vitalistech.sosrota.padroes.compiladores.AnalisadorLexico(query);
+            List<com.vitalistech.sosrota.padroes.compiladores.Token> tokens = lexer.analisar();
+
+            // 2. Análise Sintática (Parser)
+            com.vitalistech.sosrota.padroes.compiladores.AnalisadorSintatico parser = 
+                new com.vitalistech.sosrota.padroes.compiladores.AnalisadorSintatico(tokens);
+            parser.analisar();
+
+            // Se chegou aqui, a query é gramaticalmente válida
+            // (A execução semântica não é necessária pelo escopo estrito da disciplina, mas a sintática passou)
+            return org.springframework.http.ResponseEntity.ok("Consulta analisada e compilada com sucesso! Tokens: " + tokens.size());
+
+        } catch (com.vitalistech.sosrota.padroes.compiladores.ErroCompilacaoException e) {
+            return org.springframework.http.ResponseEntity.badRequest().body("Falha de Compilação: " + e.getMessage());
+        }
+    }
 }
 

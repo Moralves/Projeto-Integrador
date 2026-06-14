@@ -5,7 +5,8 @@ import jakarta.validation.constraints.NotNull;
 
 public class CriarAmbulanciaDTO {
 
-    @NotNull
+    @NotNull(message = "A placa é obrigatória")
+    @jakarta.validation.constraints.Pattern(regexp = "^[A-Z]{3}-?\\d[A-Z0-9]\\d{2}$", message = "Placa deve estar no formato antigo (AAA-1234) ou Mercosul (AAA1A23)")
     private String placa;
 
     @NotNull

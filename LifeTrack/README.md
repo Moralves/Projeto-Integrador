@@ -148,3 +148,18 @@ Conforme as exigências da disciplina, o projeto aplica estrategicamente os segu
 6. **Decorator (`CalculadorSla` / `CalculadorSlaTransitoDecorator`)**: Permite adicionar penalidades ou bonificações no cálculo do SLA (ex: tempo de trânsito) de forma dinâmica, abraçando o Princípio Aberto/Fechado (Open/Closed).
 
 Todas as implementações se encontram dentro do pacote estruturado `com.vitalistech.sosrota.padroes`.
+
+## Linguagens Formais, Autômatos e Compiladores (Requisito Acadêmico)
+
+Para contemplar as avaliações teóricas e práticas desta disciplina, o projeto foi incrementado com duas funcionalidades robustas:
+
+1. **Validação de Entradas com Regex (Autômatos Finitos)**
+   - O projeto utiliza Expressões Regulares (`@Pattern` do Jakarta Validation) nos DTOs que recebem os dados do front-end.
+   - Foram validados os campos: **Placa da Ambulância**, **Telefone do Usuário** e **Senha Forte**.
+   - Toda string enviada é processada nativamente pela máquina de estados finitos do motor Regex do Java. Para ver o desenho lógico dos Autômatos e a tabela de expressões exigidas para a entrega, consulte o documento `docs/validacoes_automatos.txt`.
+
+2. **Consulta Avançada (Gramática e Compilador Simulado)**
+   - Criamos um micro-compilador no backend para processar queries estruturadas do administrador (Exemplo: `parametro.tipo="BASICA" AND parametro.status="DISPONIVEL"`).
+   - Isso foi alcançado modelando um **Analisador Léxico (Scanner)** e um **Analisador Sintático (Parser)** utilizando a técnica de Descida Recursiva Preditiva (*Top-Down*).
+   - O endpoint para teste desse compilador se encontra em `GET /api/relatorios/consulta-avancada`.
+   - Para entender a Gramática Livre de Contexto projetada para essa linguagem e mais detalhes sobre as transições, consulte o documento `docs/gramatica_consulta.txt`.

@@ -1,0 +1,71 @@
+================================================================================
+CONSULTA AVANÇADA - GRAMÁTICA LIVRE DE CONTEXTO E ANALISADOR SINTÁTICO
+================================================================================
+
+1. OBJETIVO
+A Consulta Avançada permite aos administradores entrarem com comandos
+flexíveis para filtragem. Para validar se a string digitada é válida,
+implementamos um compilador estrutural interno contendo Analisador Léxico
+(Scanner) e Analisador Sintático (Parser).
+
+--------------------------------------------------------------------------------
+2. GRAMÁTICA LIVRE DE CONTEXTO (GLC)
+--------------------------------------------------------------------------------
+
+A Gramática definida para a consulta foi projetada visando facilitar o parsing.
+Variáveis Não-Terminais: {Expressao, ExpressaoLinha, Condicao}
+Símbolos Terminais: {IDENTIFICADOR, IGUAL, STRING, AND, OR, EOF}
+
+Regras de Produção (Notação BNF-like):
+1. Expressao -> Condicao ExpressaoLinha
+2. ExpressaoLinha -> AND Condicao ExpressaoLinha
+3. ExpressaoLinha -> OR Condicao ExpressaoLinha
+4. ExpressaoLinha -> ε (Vazio)
+5. Condicao -> IDENTIFICADOR IGUAL STRING
+
+Exemplo de sentença válida gerada pela gramática:
+IDENTIFICADOR IGUAL STRING AND IDENTIFICADOR IGUAL STRING
+(Em texto bruto: parametro.tipo="BASICA" AND parametro.status="DISPONIVEL")
+
+--------------------------------------------------------------------------------
+3. TÉCNICA ESCOLHIDA PARA O SINTÁTICO
+--------------------------------------------------------------------------------
+
+A técnica adotada foi a DESCIDA RECURSIVA PREDITIVA (Top-Down Parsing).
+
+Justificativa:
+É a forma mais elegante e direta de se implementar um parser à mão (sem usar
+geradores de compiladores como YACC ou ANTLR) em Java. O algoritmo desce 
+através dos métodos Java, onde cada Não-Terminal da gramática vira uma função 
+(método `expressao()`, `condicao()`, etc).
+
+Tabela LL(1) Conceitual (Guia de Derivação):
+--------------------------------------------------------------------------------
+Não-Terminal      | IDENTIFICADOR    | AND             | OR              | EOF
+--------------------------------------------------------------------------------
+Expressao         | Cond ExprLinha   | Erro            | Erro            | Erro
+--------------------------------------------------------------------------------
+ExpressaoLinha    | Erro             | AND Cond ExpLin | OR Cond ExpLin  | ε
+--------------------------------------------------------------------------------
+Condicao          | ID IGUAL STR     | Erro            | Erro            | Erro
+--------------------------------------------------------------------------------
+
+O compilador lê o Token de lookahead. 
+Se for um IDENTIFICADOR, ele sabe que precisa validar uma Condição. 
+Depois ele checa se o próximo token é AND, OR ou EOF, roteando a 
+decisão (Preditiva).
+
+--------------------------------------------------------------------------------
+4. ARQUITETURA NO CÓDIGO
+--------------------------------------------------------------------------------
+
+A lógica encontra-se no pacote `com.vitalistech.sosrota.padroes.compiladores`:
+- `TipoToken`: Enumerador do alfabeto de entrada.
+- `Token`: Estrutura de dados básica de passagem do Lexer para o Parser.
+- `AnalisadorLexico`: Varre a string consumindo blocos textuais e gerando Tokens.
+- `AnalisadorSintatico`: Consome a fila de Tokens verificando as produções acima.
+
+Endpoint associado:
+`GET /api/relatorios/consulta-avancada?query=...`
+No Controlador (`RelatorioControlador`), injetamos o texto no Lexer e depois 
+no Parser. Se lançar `ErroCompilacaoException`, devolvemos HTTP 400 (Bad Request).
