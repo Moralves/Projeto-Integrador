@@ -163,3 +163,50 @@ Para contemplar as avaliações teóricas e práticas desta disciplina, o projet
    - Isso foi alcançado modelando um **Analisador Léxico (Scanner)** e um **Analisador Sintático (Parser)** utilizando a técnica de Descida Recursiva Preditiva (*Top-Down*).
    - O endpoint para teste desse compilador se encontra em `GET /api/relatorios/consulta-avancada`.
    - Para entender a Gramática Livre de Contexto projetada para essa linguagem e mais detalhes sobre as transições, consulte o documento `docs/gramatica_consulta.txt`.
+
+## Sistemas Distribuídos e Computação em Nuvem — Arquitetura AWS (Requisito Acadêmico)
+
+O sistema LifeTrack foi projetado para ser implantado na **AWS (Amazon Web Services)**, seguindo os pilares do **AWS Well-Architected Framework**: segurança, confiabilidade, eficiência e otimização de custos.
+
+### Arquitetura em 3 Camadas
+
+```
+ Internet
+    │ HTTPS
+    ▼
+ CloudFront (CDN) ─── S3 (Frontend Angular)
+    │
+    ▼ Requisições de API
+ Application Load Balancer (ALB)
+    │
+    ▼ VPC Privada
+ ECS Fargate (Backend Spring Boot — Java 17)
+    │
+    ▼ Sub-rede Privada
+ Amazon RDS PostgreSQL (banco de dados gerenciado)
+```
+
+### Serviços Escolhidos e Justificativas
+
+| Serviço | Finalidade |
+|---|---|
+| **ECS Fargate** | Hospedagem do backend Spring Boot em containers serverless, sem gerenciar EC2 |
+| **Amazon RDS (PostgreSQL)** | Banco de dados gerenciado com backups automáticos e failover configurável |
+| **Application Load Balancer** | Roteamento HTTPS e distribuição de carga entre as réplicas do backend |
+| **Amazon S3** | Hospedagem do build estático do frontend Angular |
+| **Amazon CloudFront** | CDN global para o frontend — baixa latência e HTTPS automático |
+| **Amazon ECR** | Registro privado das imagens Docker do backend, integrado ao ECS |
+| **AWS Secrets Manager** | Gerenciamento seguro de credenciais (senha do banco, JWT secret) |
+| **Amazon CloudWatch** | Monitoramento de logs, métricas de CPU/memória e alarmes |
+| **Amazon VPC** | Rede virtual isolada — o banco de dados nunca fica exposto à internet |
+
+### Estimativa de Custos (Região: sa-east-1 — São Paulo)
+
+| Cenário | Custo Mensal (USD) | Custo Mensal (BRL ~R$5,20) |
+|---|---|---|
+| **On-Demand (conservador)** | ~$111,46 | ~R$ 579,59 |
+| **Otimizado** (Reserved + VPC Endpoint) | ~$67,37 | ~R$ 350,32 |
+
+O cálculo completo serviço a serviço, com premissas de uso, oportunidades de economia e referências da AWS Pricing Calculator, está documentado em `docs/calculo_custos_aws.txt`.
+
+O diagrama textual completo da arquitetura e a justificativa técnica de cada serviço estão em `docs/arquitetura_aws.txt`.

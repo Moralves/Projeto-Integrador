@@ -1,0 +1,226 @@
+================================================================================
+CÁLCULO DE CUSTOS AWS — SISTEMA LIFETRACK
+================================================================================
+Projeto: LifeTrack — Vitalis Tech / Prefeitura de Cidália
+Referência: AWS Pricing Calculator (https://calculator.aws)
+Região: sa-east-1 (São Paulo, Brasil)
+Data de referência: Junho de 2026
+Moeda: USD (Dólar Americano)
+================================================================================
+
+IMPORTANTE: Esta estimativa foi elaborada com base nos preços oficiais
+da AWS Pricing Calculator para a região sa-east-1 (São Paulo). Os valores
+podem variar de acordo com uso real, negociação de Reserved Instances e
+contratos Enterprise. Os cálculos abaixo consideram um ambiente de produção
+com tráfego moderado para uma cidade de médio porte.
+
+--------------------------------------------------------------------------------
+1. PREMISSAS DE USO
+--------------------------------------------------------------------------------
+
+Contexto do sistema:
+ - Cidade fictícia de Cidália com ~200.000 habitantes
+ - Estimativa de ~50 usuários simultâneos (operadores + administradores)
+ - ~500 ocorrências processadas por dia
+ - Disponibilidade exigida: 24x7 com SLA de 99,9%
+ - Ambiente: produção (1 AZ principal + failover Multi-AZ para o banco)
+
+
+--------------------------------------------------------------------------------
+2. DETALHAMENTO DOS CUSTOS POR SERVIÇO
+--------------------------------------------------------------------------------
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 1: Amazon ECS Fargate (Backend Spring Boot)                         │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - Tasks: 1 (mínimo, até 2 em pico)    │  vCPU: 0.25 vCPU x 730h/mês         │
+│  - CPU por Task: 0.25 vCPU             │        = 182,5 vCPU-horas           │
+│  - Memória por Task: 0.5 GB            │  Preço vCPU (sa-east-1): $0.04048   │
+│  - Sistema: Linux                      │  Custo vCPU: $7,39                  │
+│  - Horas/mês: 730h                     │                                     │
+│                                        │  Memória: 0.5 GB x 730h/mês         │
+│                                        │         = 365 GB-horas              │
+│                                        │  Preço Mem (sa-east-1): $0.004445   │
+│                                        │  Custo Memória: $1,62               │
+│                                        │                                     │
+│                                        │  SUBTOTAL ECS: ~$9,01/mês           │
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 2: Amazon RDS for PostgreSQL                                        │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - Instância: db.t3.micro              │  Instância: db.t3.micro             │
+│  - Engine: PostgreSQL 15               │  On-Demand (sa-east-1): $0,028/hora │
+│  - Multi-AZ: Não (single-AZ no plano  │  730 horas x $0,028 = $20,44        │
+│    inicial para reduzir custo)         │                                     │
+│  - Storage: 20 GB gp2                  │  Storage gp2: $0,138/GB/mês         │
+│  - Backups: 7 dias retenção            │  20 GB x $0,138 = $2,76             │
+│  - Horas/mês: 730h                     │                                     │
+│                                        │  Backup (7 dias x ~5 GB snap):      │
+│                                        │  35 GB x $0,095 = $3,33             │
+│                                        │                                     │
+│                                        │  SUBTOTAL RDS: ~$26,53/mês          │
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 3: Application Load Balancer (ALB)                                  │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - 1 ALB ativo 24x7                    │  Custo fixo ALB (sa-east-1):        │
+│  - Tráfego estimado: ~2 GB/mês         │  $0,0275/hora x 730 = $20,08        │
+│  - LCUs: estimado 1 LCU/hora           │                                     │
+│                                        │  LCU: 1 LCU x 730h x $0,008 = $5,84│
+│                                        │                                     │
+│                                        │  SUBTOTAL ALB: ~$25,92/mês          │
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 4: Amazon S3 (Frontend Angular — assets estáticos)                  │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - Storage: ~100 MB (build Angular)    │  Storage: $0,025/GB x 0,1GB = $0,00 │
+│  - Requests: ~50.000/mês (GET/PUT)     │  GET Requests: 50k x $0,0004/1k     │
+│  - Transferência: ~10 GB (CloudFront   │                 = $0,02             │
+│    serve, S3 origem)                   │  Data Transfer para CloudFront:      │
+│                                        │  $0,00/GB (free dentro da AWS)       │
+│                                        │                                     │
+│                                        │  SUBTOTAL S3: ~$0,02/mês            │
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 5: Amazon CloudFront (CDN Frontend)                                 │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - Transferência: 10 GB/mês p/ usuário │  Primeiros 1 TB: $0,11/GB (SA)      │
+│  - Requests: ~100.000/mês (HTTP/S)     │  10 GB x $0,11 = $1,10              │
+│                                        │                                     │
+│                                        │  HTTPS Requests: 100k x $0,0120/10k │
+│                                        │                = $0,12              │
+│                                        │                                     │
+│                                        │  SUBTOTAL CloudFront: ~$1,22/mês    │
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 6: Amazon ECR (Registro de imagens Docker)                          │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - Storage: ~2 imagens Docker (~500 MB)│  500 MB x $0,10/GB = $0,05          │
+│  - Transferência: dentro da AWS (free) │  Data Transfer: $0,00 (intra-VPC)   │
+│                                        │                                     │
+│                                        │  SUBTOTAL ECR: ~$0,05/mês           │
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 7: AWS Secrets Manager                                              │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - 3 Secrets (DB_URL, DB_PASS, JWT)    │  $0,40/secret/mês x 3 = $1,20       │
+│  - ~10.000 API calls/mês               │  10.000 calls x $0,05/10k = $0,05   │
+│                                        │                                     │
+│                                        │  SUBTOTAL Secrets Manager: ~$1,25/mês│
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 8: Amazon CloudWatch (Monitoramento e Logs)                         │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - Logs: ~5 GB ingeridos/mês           │  Ingestão: 5 GB x $0,57 = $2,85     │
+│  - Retenção: 30 dias                   │  Storage: 5 GB x $0,03 = $0,15      │
+│  - Métricas customizadas: 10           │  Métricas: 10 x $0,30 = $3,00       │
+│  - 3 Alarmes ativos                    │  Alarmes: 3 x $0,10 = $0,30         │
+│                                        │                                     │
+│                                        │  SUBTOTAL CloudWatch: ~$6,30/mês    │
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SERVIÇO 9: Amazon VPC (NAT Gateway — Acesso à internet do ECS)              │
+├────────────────────────────────────────┬─────────────────────────────────────┤
+│ Configuração:                          │ Cálculo:                            │
+│  - 1 NAT Gateway para saída ECS        │  Fixo: $0,056/hora x 730h = $40,88  │
+│  - Dados processados: ~5 GB/mês        │  Dados: 5 GB x $0,056 = $0,28       │
+│                                        │                                     │
+│  NOTA: O NAT Gateway é o componente    │  SUBTOTAL NAT Gateway: ~$41,16/mês  │
+│  mais caro da arquitetura porque o     │                                     │
+│  Fargate precisa acessar o ECR para    │  ALTERNATIVA ECONÔMICA: Usar VPC    │
+│  baixar imagens Docker. Alternativa:   │  Endpoint para ECR (sem NAT Gateway)│
+│  configurar VPC Endpoint para ECR.     │  economizando ~$35/mês.             │
+└────────────────────────────────────────┴─────────────────────────────────────┘
+
+
+--------------------------------------------------------------------------------
+3. CONSOLIDAÇÃO DO CUSTO MENSAL
+--------------------------------------------------------------------------------
+
+┌──────────────────────────────────────────────────────────────────┐
+│               RESUMO TOTAL — AMBIENTE DE PRODUÇÃO                │
+├────────────────────────────────────────┬─────────────────────────┤
+│ Serviço                                │ Custo Mensal (USD)       │
+├────────────────────────────────────────┼─────────────────────────┤
+│ ECS Fargate (Backend Java/Spring Boot) │ $9,01                   │
+│ RDS PostgreSQL (db.t3.micro)           │ $26,53                  │
+│ Application Load Balancer (ALB)        │ $25,92                  │
+│ Amazon S3 (Frontend Angular)           │ $0,02                   │
+│ Amazon CloudFront (CDN)                │ $1,22                   │
+│ Amazon ECR (Imagens Docker)            │ $0,05                   │
+│ AWS Secrets Manager                    │ $1,25                   │
+│ Amazon CloudWatch (Logs/Métricas)      │ $6,30                   │
+│ NAT Gateway (VPC — Saída ECS)          │ $41,16                  │
+├────────────────────────────────────────┼─────────────────────────┤
+│ TOTAL MENSAL ESTIMADO                  │ ~$111,46 USD/mês        │
+├────────────────────────────────────────┼─────────────────────────┤
+│ TOTAL ANUAL ESTIMADO                   │ ~$1.337,52 USD/ano      │
+├────────────────────────────────────────┴─────────────────────────┤
+│ Conversão aproximada BRL (câmbio R$5,20):                        │
+│   Mensal:  ~R$ 579,59/mês                                        │
+│   Anual:   ~R$ 6.955,10/ano                                      │
+└──────────────────────────────────────────────────────────────────┘
+
+
+--------------------------------------------------------------------------------
+4. OPORTUNIDADES DE ECONOMIA
+--------------------------------------------------------------------------------
+
+4.1 Reserved Instances (RDS)
+  - Contratando o RDS em Reserved Instance por 1 ano (No Upfront):
+  - Economia de ~38% sobre o On-Demand
+  - Custo mensal cai de $26,53 → ~$16,45/mês
+  - Economia anual: ~$121,00
+
+4.2 Savings Plans (ECS Fargate)
+  - Compute Savings Plans com 1 ano de compromisso:
+  - Economia de até 20% no ECS Fargate
+  - Custo mensal: $9,01 → ~$7,21/mês
+
+4.3 VPC Endpoint para ECR (eliminar NAT Gateway)
+  - Usando Interface VPC Endpoint para ECR em vez de NAT Gateway:
+  - Custo do Endpoint: ~$7,30/mês (2 endpoints: ecr.api + ecr.dkr)
+  - Economia: $41,16 - $7,30 = ~$33,86/mês
+  - Esta é a otimização de MAIOR impacto no orçamento
+
+4.4 Cenário Otimizado com todas as economias:
+  - Custo mensal otimizado: ~$67,37 USD/mês (~R$ 350,32)
+  - Economia total vs. On-Demand: ~$44,09/mês (~R$ 229,27)
+
+
+--------------------------------------------------------------------------------
+5. REFERÊNCIAS DE PREÇOS UTILIZADAS
+--------------------------------------------------------------------------------
+
+Todos os valores foram consultados na AWS Pricing Calculator oficial:
+  https://calculator.aws/pricing/2/homescreen
+
+Região utilizada: South America (São Paulo) — sa-east-1
+Data de consulta referência: Junho de 2026
+
+Links dos serviços consultados:
+  - ECS Fargate: https://aws.amazon.com/fargate/pricing/
+  - RDS PostgreSQL: https://aws.amazon.com/rds/postgresql/pricing/
+  - ALB: https://aws.amazon.com/elasticloadbalancing/pricing/
+  - S3: https://aws.amazon.com/s3/pricing/
+  - CloudFront: https://aws.amazon.com/cloudfront/pricing/
+  - CloudWatch: https://aws.amazon.com/cloudwatch/pricing/
+  - Secrets Manager: https://aws.amazon.com/secrets-manager/pricing/
+  - NAT Gateway: https://aws.amazon.com/vpc/pricing/
+  - ECR: https://aws.amazon.com/ecr/pricing/

@@ -1,0 +1,136 @@
+================================================================================
+SISTEMAS DISTRIBUÍDOS E COMPUTAÇÃO EM NUVEM - ARQUITETURA AWS
+================================================================================
+Projeto: LifeTrack — Sistema de Gestão de Atendimentos de Emergência
+Empresa: Vitalis Tech | Cidade: Cidália (Fictícia)
+Versão: 1.0 | Ambiente: Produção (Estimado)
+================================================================================
+
+--------------------------------------------------------------------------------
+1. VISÃO GERAL DA ARQUITETURA
+--------------------------------------------------------------------------------
+
+O sistema LifeTrack é composto por um backend Java/Spring Boot, um frontend
+Angular e um banco de dados PostgreSQL. A arquitetura proposta para a AWS foi
+desenhada seguindo os pilares do AWS Well-Architected Framework:
+Excelência Operacional, Segurança, Confiabilidade, Eficiência de Performance
+e Otimização de Custos.
+
+A solução é estruturada em 3 camadas principais:
+ - [Camada Pública]   → usuários e operadores acessam via HTTPS
+ - [Camada Aplicação] → backend e frontend hospedados em containers gerenciados
+ - [Camada Dados]     → banco de dados gerenciado, isolado em sub-rede privada
+
+
+--------------------------------------------------------------------------------
+2. DIAGRAMA DA ARQUITETURA (REPRESENTAÇÃO TEXTUAL)
+--------------------------------------------------------------------------------
+
+                         ┌─────────────────────────────────────────────┐
+                         │             INTERNET (Usuários)             │
+                         └──────────────────┬──────────────────────────┘
+                                            │ HTTPS (443)
+                         ┌──────────────────▼──────────────────────────┐
+                         │         AWS CloudFront (CDN Global)          │
+                         │  Distribui o frontend Angular (SPA estático) │
+                         └──────────────┬─────────────────┬────────────┘
+                                        │                 │
+              Requisições de API        │                 │ Assets estáticos
+                         ┌──────────────▼────────────┐   │
+                         │   Application Load Balancer│   │
+                         │   (ALB - Camada Pública)   │   │
+                         └──────────────┬─────────────┘   │
+                                        │                 │
+              ┌─────────────────────────▼───────────────────────────────────┐
+              │                    VPC Privada (10.0.0.0/16)                │
+              │  ┌────────────────────────────────────────────────────────┐ │
+              │  │           Sub-rede Pública (10.0.1.0/24)               │ │
+              │  │                                                        │ │
+              │  │   ┌────────────────────────────────────────────────┐  │ │
+              │  │   │  ECS Fargate Cluster (Container Gerenciado)    │  │ │
+              │  │   │                                                │  │ │
+              │  │   │  ┌──────────────────┐  ┌──────────────────┐   │  │ │
+              │  │   │  │  Task: Backend   │  │  Task: Backend   │   │  │ │
+              │  │   │  │  Spring Boot     │  │  Spring Boot     │   │  │ │
+              │  │   │  │  (Java 17)       │  │  (Java 17)       │   │  │ │
+              │  │   │  │  Port: 8081      │  │  Port: 8081      │   │  │ │
+              │  │   │  └────────┬─────────┘  └─────────┬────────┘   │  │ │
+              │  │   └───────────┼────────────────────── ┼────────────┘  │ │
+              │  │               │                        │               │ │
+              │  │   ┌───────────▼────────────────────────▼────────────┐ │ │
+              │  │   │          Sub-rede Privada (10.0.2.0/24)         │ │ │
+              │  │   │                                                  │ │ │
+              │  │   │  ┌───────────────────────────────────────────┐  │ │ │
+              │  │   │  │      Amazon RDS (PostgreSQL 15)            │  │ │ │
+              │  │   │  │  Multi-AZ / Backup automático 7 dias       │  │ │ │
+              │  │   │  │  db.t3.micro (2 vCPU, 1 GB RAM)           │  │ │ │
+              │  │   │  │  Storage: 20 GB gp2                        │  │ │ │
+              │  │   │  └───────────────────────────────────────────┘  │ │ │
+              │  │   └──────────────────────────────────────────────────┘ │ │
+              │  └────────────────────────────────────────────────────────┘ │
+              │                                                              │
+              │  ┌──────────────────────────────────────────────────────┐   │
+              │  │              Serviços de Suporte                     │   │
+              │  │  ┌─────────────┐ ┌─────────────┐ ┌───────────────┐ │   │
+              │  │  │  Amazon S3  │ │  Amazon ECR │ │  AWS Secrets  │ │   │
+              │  │  │  (Frontend  │ │  (Imagens   │ │  Manager      │ │   │
+              │  │  │   Angular)  │ │   Docker)   │ │  (Credenciais)│ │   │
+              │  │  └─────────────┘ └─────────────┘ └───────────────┘ │   │
+              │  │  ┌─────────────────────────────────────────────┐   │   │
+              │  │  │       Amazon CloudWatch (Monitoramento)      │   │   │
+              │  │  │   Logs, Métricas, Alarmes de CPU/Memória     │   │   │
+              │  │  └─────────────────────────────────────────────┘   │   │
+              │  └──────────────────────────────────────────────────────┘   │
+              └──────────────────────────────────────────────────────────────┘
+
+
+--------------------------------------------------------------------------------
+3. SERVIÇOS AWS ESCOLHIDOS E JUSTIFICATIVA TÉCNICA
+--------------------------------------------------------------------------------
+
+| Serviço              | Uso no Sistema LifeTrack                          | Justificativa                                                        |
+|----------------------|---------------------------------------------------|----------------------------------------------------------------------|
+| Amazon VPC           | Rede virtual isolada para todos os recursos        | Segurança em camadas — RDS nunca exposto diretamente à internet.      |
+| Amazon ECS (Fargate) | Hospedagem do backend Spring Boot em containers    | Serverless de container: sem gerenciar EC2, escala automática, pague por uso. |
+| Amazon ECR           | Registro privado das imagens Docker do backend     | Integrado ao ECS, suporta o pipeline CI/CD nativo com versionamento de imagem. |
+| Application Load Balancer (ALB) | Roteamento HTTP/HTTPS para o ECS Fargate | Distribui carga entre as réplicas do backend, SSL termination e health checks. |
+| Amazon RDS (PostgreSQL) | Banco de dados gerenciado com Multi-AZ           | Backups automáticos, failover gerenciado, patches sem downtime manual. |
+| Amazon S3            | Hospedagem do build estático do frontend Angular   | Custo baixíssimo para assets estáticos, escala ilimitada e 99,99% SLA. |
+| Amazon CloudFront    | CDN global para o frontend Angular                 | Latência reduzida globalmente, cache de assets, HTTPS out-of-the-box. |
+| AWS Secrets Manager  | Armazenamento seguro de credenciais (DB, JWT)      | Evita hardcode de senha em código ou variáveis de ambiente inseguras. |
+| Amazon CloudWatch    | Monitoramento de logs e métricas do ECS e RDS      | Visibilidade em tempo real, alarmes para CPU > 80% e erros de aplicação. |
+| AWS IAM              | Controle de permissões dos serviços AWS            | Princípio do menor privilégio: cada serviço acessa apenas o que precisa. |
+
+
+--------------------------------------------------------------------------------
+4. FLUXO DE COMUNICAÇÃO PRINCIPAL
+--------------------------------------------------------------------------------
+
+1. O operador acessa https://lifetrack.vitalistech.com.br via browser.
+2. O CloudFront serve o frontend Angular (build estático do S3) ao usuário.
+3. O Angular envia requisições de API para o ALB (https://api.vitalistech.com.br).
+4. O ALB encaminha o request para uma das Tasks do ECS Fargate (Backend Java/Spring Boot).
+5. O Spring Boot processa a lógica de negócio e acessa o RDS PostgreSQL na sub-rede privada.
+6. O resultado retorna pelo mesmo caminho até o browser do operador.
+7. O CloudWatch coleta logs e métricas durante todo o fluxo.
+8. O Secrets Manager é consultado pelo ECS na inicialização para obter as credenciais do RDS.
+
+
+--------------------------------------------------------------------------------
+5. ESTRATÉGIA DE ESCALABILIDADE
+--------------------------------------------------------------------------------
+
+* O ECS Fargate permite configurar Auto Scaling baseado em CPU ou quantidade de requisições.
+* Recomendado: mínimo de 1 Task, máximo de 4 Tasks com escalonamento quando CPU > 70%.
+* O RDS Multi-AZ garante alta disponibilidade: em caso de falha, failover automático em < 60s.
+* O CloudFront reduz drasticamente a carga no backend ao servir assets em cache.
+
+
+--------------------------------------------------------------------------------
+6. ESTRATÉGIA DE SEGURANÇA
+--------------------------------------------------------------------------------
+
+* Comunicação entre ALB → ECS → RDS protegida por Security Groups com regras mínimas de ingress.
+* RDS na sub-rede privada — sem IP público, acessível apenas pelas Tasks ECS.
+* SSL/TLS em todas as comunicações externas via ALB e CloudFront (certificado pelo ACM - AWS Certificate Manager).
+* Segredos (DB_PASSWORD, JWT_SECRET) gerenciados pelo Secrets Manager, nunca em variáveis de ambiente plaintext.
