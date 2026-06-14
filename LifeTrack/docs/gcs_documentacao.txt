@@ -1,0 +1,211 @@
+================================================================================
+GERÊNCIA DE CONFIGURAÇÃO DE SOFTWARE (GCS) — LIFETRACK
+================================================================================
+Projeto: LifeTrack — Vitalis Tech / Prefeitura de Cidália
+Disciplina: Gerência de Configuração de Software
+Versão do documento: 1.0 | Data: Junho de 2026
+================================================================================
+
+--------------------------------------------------------------------------------
+1. IDENTIFICAÇÃO DOS ITENS DE CONFIGURAÇÃO (ICs)
+--------------------------------------------------------------------------------
+
+Um Item de Configuração (IC) é qualquer artefato do projeto que precisa ser
+controlado, versionado e rastreado ao longo do ciclo de vida do software.
+
+┌──────┬──────────────────────────────────────┬──────────────┬──────────────────────────────────────────────────────┐
+│ ID   │ Nome do IC                           │ Tipo         │ Localização no Repositório                           │
+├──────┼──────────────────────────────────────┼──────────────┼──────────────────────────────────────────────────────┤
+│ IC01 │ Código-fonte Backend (Spring Boot)   │ Código       │ backend/src/main/java/com/vitalistech/sosrota/        │
+│ IC02 │ Código-fonte Frontend (Angular)      │ Código       │ frontend/src/app/                                    │
+│ IC03 │ Scripts de Migração de Banco (SQL)   │ Banco        │ backend/src/main/resources/db/migration/             │
+│ IC04 │ Arquivo de Configuração da API       │ Config       │ backend/src/main/resources/application.properties    │
+│ IC05 │ Pipeline de CI (GitHub Actions)      │ CI/CD        │ .github/workflows/ci.yml                             │
+│ IC06 │ Definição de Dependências Backend    │ Config       │ backend/pom.xml                                      │
+│ IC07 │ Definição de Dependências Frontend   │ Config       │ frontend/package.json                                │
+│ IC08 │ Documentação de Requisitos           │ Documento    │ docs/REQUISITOS.md                                   │
+│ IC09 │ README Principal                     │ Documento    │ README.md                                            │
+│ IC10 │ Changelog do Projeto                 │ Documento    │ CHANGELOG.md                                         │
+│ IC11 │ Guia de Commits                      │ Documento    │ GUIA_DE_COMMITS.md                                   │
+│ IC12 │ Documentação dos Padrões de Projeto  │ Código       │ backend/src/main/java/.../padroes/                   │
+│ IC13 │ Documento de Validações e Autômatos  │ Documento    │ docs/validacoes_automatos.txt                        │
+│ IC14 │ Documento de Gramática e Compilador  │ Documento    │ docs/gramatica_consulta.txt                          │
+│ IC15 │ Documento de Arquitetura AWS         │ Documento    │ docs/arquitetura_aws.txt                             │
+│ IC16 │ Documento de Custos AWS              │ Documento    │ docs/calculo_custos_aws.txt                          │
+│ IC17 │ Documentação GCS (este documento)    │ Documento    │ docs/gcs_documentacao.txt                            │
+└──────┴──────────────────────────────────────┴──────────────┴──────────────────────────────────────────────────────┘
+
+
+--------------------------------------------------------------------------------
+2. BASELINES DEFINIDAS
+--------------------------------------------------------------------------------
+
+Uma Baseline é um ponto estável e verificado do projeto, formalmente aceito
+como referência para o desenvolvimento subsequente.
+
+BL0 — BASELINE INICIAL
+  Versão: v1.0.0
+  Data: 2026-06-03
+  Composição:
+    - IC01: Backend funcional com entidades, serviços e repositórios base
+    - IC02: Frontend inicial (SPA Angular com rotas e autenticação)
+    - IC03: Migrations do banco de dados iniciais
+    - IC04: application.properties configurado para PostgreSQL local
+    - IC06: pom.xml com Spring Boot 3, Java 17, Spring Security, Flyway
+    - IC07: package.json com Angular 17 e dependências
+    - IC08: REQUISITOS.md importado
+    - IC09: README.md com guia de execução básico
+  Critérios de Estabilidade:
+    - Backend compila sem erros (`mvnw clean compile`)
+    - Sistema de login funcional (JWT)
+    - CRUD de ocorrências operacional
+    - Frontend renderiza sem erros de build
+  Status: ESTABILIZADO ✓
+
+BL1 — BASELINE FUNCIONAL (COM REQUISITOS ACADÊMICOS)
+  Versão: v1.2.0
+  Data: 2026-06-14
+  Composição: Todos os ICs (IC01 ao IC17)
+  Critérios de Estabilidade:
+    - BL0 incluída (todos os critérios anteriores satisfeitos)
+    - 6 Padrões de Projeto implementados e documentados no código
+    - Validações Regex ativas nos 3 campos escolhidos
+    - Analisador Léxico + Sintático funcional com endpoint exposto
+    - Documentos de entrega impressa criados (.txt)
+    - Arquitetura AWS e cálculo de custos documentados
+    - Pipeline de CI (.github/workflows/ci.yml) funcional
+    - CHANGELOG.md atualizado com histórico de releases
+  Status: ESTABILIZADO ✓
+
+
+--------------------------------------------------------------------------------
+3. POLÍTICA DE VERSIONAMENTO (SEMANTIC VERSIONING)
+--------------------------------------------------------------------------------
+
+O projeto adota MAJOR.MINOR.PATCH conforme semver.org:
+
+  MAJOR: Mudanças incompatíveis com a versão anterior (ex: quebra de API)
+  MINOR: Novas funcionalidades compatíveis com a versão anterior
+  PATCH: Correções de bugs sem novas funcionalidades
+
+Histórico de versões aplicadas:
+  v1.0.0 → Baseline inicial do sistema funcional
+  v1.1.0 → Migração Angular + correções de bugs no backend
+  v1.2.0 → Integração dos requisitos acadêmicos (padrões, regex, compilador, GCS)
+
+Procedimento para criar uma nova tag no repositório:
+  git tag -a v1.2.0 -m "BL1: Baseline funcional com requisitos acadêmicos"
+  git push origin v1.2.0
+
+
+--------------------------------------------------------------------------------
+4. CONTROLE DE MUDANÇAS — FLUXO DE TRABALHO GIT
+--------------------------------------------------------------------------------
+
+Convenção de branches adotada:
+  main       → código estável de produção (protegida — só aceita PR)
+  develop    → branch de integração contínua
+  feature/*  → novas funcionalidades (ex: feature/padrao-singleton)
+  fix/*      → correções pontuais (ex: fix/duplicacao-profissionais)
+  docs/*     → atualizações de documentação (ex: docs/aws-architecture)
+
+Fluxo completo (Change Request → Merge):
+  1. Abrir uma Issue no GitHub descrevendo a mudança (Change Request formal)
+  2. Criar uma branch vinculada: feature/nome-da-issue
+  3. Implementar a mudança e commitar seguindo Conventional Commits
+  4. Abrir Pull Request com: descrição, critérios de aceite e link da Issue
+  5. Revisão de código (code review)
+  6. Merge na develop → CI executa automaticamente
+  7. Merge na main → nova tag de release, CHANGELOG atualizado
+
+
+--------------------------------------------------------------------------------
+5. PIPELINE DE CI (AUDITORIA AUTOMATIZADA)
+--------------------------------------------------------------------------------
+
+Arquivo: .github/workflows/ci.yml
+Trigger: push e pull_request nas branches main e develop
+
+Jobs configurados:
+  1. backend-build: Java 17 + Maven (compile + test + package)
+  2. frontend-build: Node 20 + Angular (npm ci + ng build --prod)
+  3. security-audit: npm audit com nível high/critical
+
+A cada PR aberto, o GitHub Actions executa os 3 jobs e bloqueia o merge
+caso qualquer job falhe — garantindo a integridade do código principal.
+
+
+--------------------------------------------------------------------------------
+6. MATRIZ DE RASTREABILIDADE
+--------------------------------------------------------------------------------
+
+Liga cada requisito implementado à sua Issue, branch, arquivo e release.
+
+┌───────┬──────────────────────────────────────────┬──────────────────────────────────────┬─────────────────┬──────────┐
+│ REQ   │ Descrição                                │ Branch / Arquivo Principal           │ Issue (CR)      │ Release  │
+├───────┼──────────────────────────────────────────┼──────────────────────────────────────┼─────────────────┼──────────┤
+│ RF01  │ Registro e despacho de ocorrências       │ feature/ocorrencia-despacho          │ Issue #1        │ v1.0.0   │
+│ RF02  │ Gerenciamento de ambulâncias e equipes   │ feature/gerenciar-recursos           │ Issue #2        │ v1.0.0   │
+│ RF03  │ Cálculo de rota mínima (Dijkstra)        │ feature/algoritmo-rota               │ Issue #3        │ v1.0.0   │
+│ RF04  │ Autenticação JWT (Admin/Operador)        │ feature/autenticacao-jwt             │ Issue #4        │ v1.0.0   │
+│ RF05  │ Relatório de ocorrências                 │ feature/relatorios                   │ Issue #5        │ v1.0.0   │
+│ RF06  │ Frontend Angular com SPA e roteamento   │ feature/frontend-angular             │ Issue #6        │ v1.1.0   │
+│ RF07  │ Padrão Singleton (LoggerAuditoria)       │ feature/padrao-singleton             │ Issue #7        │ v1.2.0   │
+│ RF08  │ Padrão Factory (AmbulanciaFactory)       │ feature/padrao-factory               │ Issue #8        │ v1.2.0   │
+│ RF09  │ Padrão Template Method (Relatorio)       │ feature/padrao-template              │ Issue #9        │ v1.2.0   │
+│ RF10  │ Padrão Adapter (CalculadorDistancia)     │ feature/padrao-adapter               │ Issue #10       │ v1.2.0   │
+│ RF11  │ Padrão Iterator (FrotaAmbulancias)       │ feature/padrao-iterator              │ Issue #11       │ v1.2.0   │
+│ RF12  │ Padrão Decorator (CalculadorSla)         │ feature/padrao-decorator             │ Issue #12       │ v1.2.0   │
+│ RF13  │ Validação Regex: Placa Ambulância        │ feature/regex-validacoes             │ Issue #13       │ v1.2.0   │
+│ RF14  │ Validação Regex: Telefone e Senha        │ feature/regex-validacoes             │ Issue #13       │ v1.2.0   │
+│ RF15  │ Consulta Avançada (Lexer + Parser)       │ feature/compilador-consulta          │ Issue #14       │ v1.2.0   │
+│ RF16  │ Arquitetura e Custos AWS documentados    │ docs/aws-architecture                │ Issue #15       │ v1.2.0   │
+│ RF17  │ Pipeline de CI (GitHub Actions)          │ docs/gcs-ci-pipeline                 │ Issue #16       │ v1.2.0   │
+└───────┴──────────────────────────────────────────┴──────────────────────────────────────┴─────────────────┴──────────┘
+
+
+--------------------------------------------------------------------------------
+7. RFC FORMAL REGISTRADA — SOLICITAÇÃO DE MUDANÇA
+--------------------------------------------------------------------------------
+
+RFC-001: Integração dos Requisitos Acadêmicos ao Sistema LifeTrack
+
+Identificação:
+  Número: RFC-001
+  Data de abertura: 2026-06-10
+  Solicitante: Equipe de Desenvolvimento — Vitalis Tech
+  Status: APROVADA E IMPLEMENTADA
+
+Descrição da Mudança:
+  Integrar ao sistema LifeTrack os requisitos acadêmicos das disciplinas
+  do Projeto Integrador 2026/1, sem degradar o funcionamento do sistema
+  existente (baseline BL0).
+
+Justificativa:
+  Os professores das disciplinas de Padrões de Projeto, Linguagens Formais,
+  Sistemas Distribuídos e Gerência de Configuração definiram entregas técnicas
+  específicas que devem ser implementadas ou documentadas no código-fonte do
+  projeto para compor a nota do Projeto Integrador.
+
+Escopo do Impacto:
+  Backend:
+    - Criação do pacote `padroes/` com subpacotes (singleton, factory, template,
+      adapter, iterator, decorator, compiladores)
+    - Refatoração dos serviços OcorrenciaServico e AnaliseEstrategicaServico
+    - Refatoração dos controladores AmbulanciaControlador e RelatorioControlador
+    - Adição de validações @Pattern nos DTOs CriarAmbulanciaDTO e CriarUsuarioDTO
+    - Novo endpoint: GET /api/relatorios/consulta-avancada
+  Frontend:
+    - Nenhum impacto direto nesta RFC
+  Banco de Dados:
+    - Nenhuma migração necessária
+  Infraestrutura:
+    - Adição de .github/workflows/ci.yml (CI automatizado)
+  Documentação:
+    - Adição de 5 novos documentos em docs/
+    - Criação de CHANGELOG.md
+    - Atualização do README.md
+
+Versão Aplicada: v1.2.0
+Data de conclusão: 2026-06-14
+Responsável técnico: Equipe LifeTrack

@@ -210,3 +210,42 @@ O sistema LifeTrack foi projetado para ser implantado na **AWS (Amazon Web Servi
 O cálculo completo serviço a serviço, com premissas de uso, oportunidades de economia e referências da AWS Pricing Calculator, está documentado em `docs/calculo_custos_aws.txt`.
 
 O diagrama textual completo da arquitetura e a justificativa técnica de cada serviço estão em `docs/arquitetura_aws.txt`.
+
+## Gerência de Configuração de Software — GCS (Requisito Acadêmico)
+
+O projeto aplica os **4 Pilares da GCS** ao longo de todo o ciclo de vida do desenvolvimento.
+
+### 1. Identificação dos Itens de Configuração (ICs)
+
+O projeto possui **17 ICs catalogados**, distribuídos entre código-fonte (backend e frontend), banco de dados, configuração, pipeline CI/CD e documentação. O catálogo completo com nome, tipo e localização de cada IC está em `docs/gcs_documentacao.txt`.
+
+### 2. Baselines Definidas
+
+| Baseline | Versão | Data | Descrição |
+|---|---|---|---|
+| **BL0** | `v1.0.0` | 2026-06-03 | Sistema funcional inicial com backend, frontend, banco e autenticação |
+| **BL1** | `v1.2.0` | 2026-06-14 | Baseline com todos os requisitos acadêmicos integrados |
+
+### 3. Política de Versionamento
+
+O projeto adota **Semantic Versioning** (`MAJOR.MINOR.PATCH`). O histórico completo de releases com todas as mudanças está documentado em [`CHANGELOG.md`](CHANGELOG.md).
+
+Para criar uma tag de release:
+```bash
+git tag -a v1.2.0 -m "BL1: Baseline funcional com requisitos acadêmicos"
+git push origin v1.2.0
+```
+
+### 4. Pipeline de CI (Auditoria Automatizada)
+
+O arquivo [`.github/workflows/ci.yml`](.github/workflows/ci.yml) implementa 3 jobs que executam automaticamente a cada `push` ou `Pull Request` nas branches `main` e `develop`:
+
+| Job | Ferramenta | O que valida |
+|---|---|---|
+| `backend-build` | Java 17 + Maven | Compilação, testes e empacotamento do backend |
+| `frontend-build` | Node 20 + Angular | Build de produção do frontend Angular |
+| `security-audit` | npm audit | Dependências com vulnerabilidades high/critical |
+
+### 5. Controle de Mudanças e Rastreabilidade
+
+O fluxo de controle de mudanças segue o padrão **Issue → Branch → Pull Request → Merge**. A Matriz de Rastreabilidade completa (17 requisitos × Issue × Branch × Release) e a **RFC-001** formal (descrição, justificativa, impacto e versão aplicada) estão em `docs/gcs_documentacao.txt`.
