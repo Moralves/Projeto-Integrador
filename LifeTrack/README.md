@@ -135,3 +135,16 @@ Use estes sinais para confirmar que tudo subiu corretamente:
 
 - [backend/README.md](backend/README.md)
 - [frontend/README.md](frontend/README.md)
+
+## Padrões de Projeto (Requisito Acadêmico)
+
+Conforme as exigências da disciplina, o projeto aplica estrategicamente os seguintes padrões de projeto no backend:
+
+1. **Singleton (`LoggerAuditoria`)**: Garante um ponto único e global de acesso para logs críticos de auditoria do sistema.
+2. **Factory Method (`AmbulanciaFactory`)**: Desacopla a instanciação das ambulâncias do controlador, usando fábricas específicas para `AmbulanciaBasica` e `AmbulanciaUTI`.
+3. **Template Method (`GeradorRelatorioTemplate`)**: Define a estrutura fixa (algoritmo) para a extração de relatórios, permitindo que a subclasse `GeradorRelatorioOcorrencia` personalize os dados específicos.
+4. **Adapter (`CalculadorDistanciaPort` / `AlgoritmoDijkstraAdapter`)**: Adapta o utilitário `AlgoritmoDijkstra` para uma porta (interface), permitindo injetar e substituir a lógica de cálculo de distância (ex: Google Maps) no futuro sem alterar as regras de negócio.
+5. **Iterator (`FrotaAmbulancias` / `AmbulanciaDisponivelIterator`)**: Permite iterar pela coleção de ambulâncias de forma inteligente, retornando nativamente apenas as que estão com status `DISPONIVEL` e `Ativa`.
+6. **Decorator (`CalculadorSla` / `CalculadorSlaTransitoDecorator`)**: Permite adicionar penalidades ou bonificações no cálculo do SLA (ex: tempo de trânsito) de forma dinâmica, abraçando o Princípio Aberto/Fechado (Open/Closed).
+
+Todas as implementações se encontram dentro do pacote estruturado `com.vitalistech.sosrota.padroes`.

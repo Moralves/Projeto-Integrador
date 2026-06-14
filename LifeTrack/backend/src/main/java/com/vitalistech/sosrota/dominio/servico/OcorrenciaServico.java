@@ -29,6 +29,7 @@ public class OcorrenciaServico {
     private final ProfissionalRepositorio profissionalRepositorio;
     private final AtendimentoRotaConexaoRepositorio atendimentoRotaConexaoRepositorio;
     private final HistoricoOcorrenciaServico historicoOcorrenciaServico;
+    private final com.vitalistech.sosrota.padroes.adapter.CalculadorDistanciaPort calculadorDistanciaPort;
 
     public OcorrenciaServico(OcorrenciaRepositorio ocorrenciaRepositorio,
                              AmbulanciaRepositorio ambulanciaRepositorio,
@@ -37,7 +38,8 @@ public class OcorrenciaServico {
                              EquipeRepositorio equipeRepositorio,
                              ProfissionalRepositorio profissionalRepositorio,
                              AtendimentoRotaConexaoRepositorio atendimentoRotaConexaoRepositorio,
-                             HistoricoOcorrenciaServico historicoOcorrenciaServico) {
+                             HistoricoOcorrenciaServico historicoOcorrenciaServico,
+                             com.vitalistech.sosrota.padroes.adapter.CalculadorDistanciaPort calculadorDistanciaPort) {
         this.ocorrenciaRepositorio = ocorrenciaRepositorio;
         this.ambulanciaRepositorio = ambulanciaRepositorio;
         this.atendimentoRepositorio = atendimentoRepositorio;
@@ -46,6 +48,7 @@ public class OcorrenciaServico {
         this.profissionalRepositorio = profissionalRepositorio;
         this.atendimentoRotaConexaoRepositorio = atendimentoRotaConexaoRepositorio;
         this.historicoOcorrenciaServico = historicoOcorrenciaServico;
+        this.calculadorDistanciaPort = calculadorDistanciaPort;
     }
 
     @Transactional
@@ -127,9 +130,9 @@ public class OcorrenciaServico {
             slaMinutos = 30;
         }
 
-        // Buscar apenas ambulâncias DISPONIVEIS (garante que só faz um atendimento por vez)
-        List<Ambulancia> ambulanciasDisponiveis =
-                ambulanciaRepositorio.findByStatusAndAtivaTrue(StatusAmbulancia.DISPONIVEL);
+        // Padrão Iterator: Utilizar a FrotaAmbulancias para iterar apenas sobre as disponíveis
+        List<Ambulancia> todasAmbulancias = ambulanciaRepositorio.findAll();
+        com.vitalistech.sosrota.padroes.iterator.FrotaAmbulancias frota = new com.vitalistech.sosrota.padroes.iterator.FrotaAmbulancias(todasAmbulancias);
 
         Ambulancia melhorAmbulancia = null;
         double menorDistancia = Double.POSITIVE_INFINITY;
@@ -138,7 +141,7 @@ public class OcorrenciaServico {
         List<RuaConexao> todasConexoes = ruaConexaoRepositorio.findAll();
 
         // Encontrar a ambulância mais próxima que atende aos critérios
-        for (Ambulancia a : ambulanciasDisponiveis) {
+        for (Ambulancia a : frota) {
 
             // Verificar tipo compatível
             if (!tipoCompativel(a.getTipo(), tipoNecessario)) {
@@ -150,8 +153,8 @@ public class OcorrenciaServico {
                 continue;
             }
 
-            // Calcular rota usando Dijkstra
-            ResultadoRota rota = AlgoritmoDijkstra.calcularRota(
+            // Padrão Adapter: Utilizando o port injetado em vez do acoplamento direto com a classe estática
+            ResultadoRota rota = calculadorDistanciaPort.calcularRota(
                     a.getBairroBase(),
                     ocorrencia.getBairroLocal(),
                     todasConexoes
@@ -281,9 +284,9 @@ public class OcorrenciaServico {
             tipoNecessario = TipoAmbulancia.BASICA;
         }
 
-        // Buscar ambulâncias disponíveis
-        List<Ambulancia> ambulanciasDisponiveis =
-                ambulanciaRepositorio.findByStatusAndAtivaTrue(StatusAmbulancia.DISPONIVEL);
+        // Padrão Iterator: Iterando apenas pelas ambulâncias disponíveis
+        List<Ambulancia> todasAmbulancias = ambulanciaRepositorio.findAll();
+        com.vitalistech.sosrota.padroes.iterator.FrotaAmbulancias frota = new com.vitalistech.sosrota.padroes.iterator.FrotaAmbulancias(todasAmbulancias);
 
         // Buscar todas as conexões para o Dijkstra
         List<RuaConexao> todasConexoes = ruaConexaoRepositorio.findAll();
@@ -291,7 +294,7 @@ public class OcorrenciaServico {
         List<AmbulanciaSugeridaDTO> sugestoes = new ArrayList<>();
 
         // Para cada ambulância disponível, calcular rota e verificar critérios
-        for (Ambulancia ambulancia : ambulanciasDisponiveis) {
+        for (Ambulancia ambulancia : frota) {
             // Verificar tipo compatível
             if (!tipoCompativel(ambulancia.getTipo(), tipoNecessario)) {
                 continue;
@@ -305,8 +308,8 @@ public class OcorrenciaServico {
                 continue; // Só sugerir ambulâncias com equipe completa
             }
 
-            // Calcular rota usando Dijkstra
-            ResultadoRota rota = AlgoritmoDijkstra.calcularRota(
+            // Padrão Adapter: Utilizando o port injetado
+            ResultadoRota rota = calculadorDistanciaPort.calcularRota(
                     ambulancia.getBairroBase(),
                     ocorrencia.getBairroLocal(),
                     todasConexoes
@@ -408,16 +411,20 @@ public class OcorrenciaServico {
 
     /**
      * Calcula o SLA em minutos baseado na gravidade da ocorrência.
-     * ALTA = 8 minutos, MÉDIA = 15 minutos, BAIXA = 30 minutos.
+     * Utiliza o padrão Decorator para permitir adicionar condições extras 
+     * (como trânsito) de forma dinâmica.
      */
     private int calcularSlaPorGravidade(Gravidade gravidade) {
-        if (gravidade == Gravidade.ALTA) {
-            return 8;
-        } else if (gravidade == Gravidade.MEDIA) {
-            return 15;
-        } else {
-            return 30; // BAIXA
+        // Padrão Decorator
+        com.vitalistech.sosrota.padroes.decorator.CalculadorSla calculador = 
+            new com.vitalistech.sosrota.padroes.decorator.CalculadorSlaPadrao();
+            
+        // Simulando que se a gravidade for baixa, podemos adicionar uma tolerância de trânsito
+        if (gravidade == Gravidade.BAIXA) {
+            calculador = new com.vitalistech.sosrota.padroes.decorator.CalculadorSlaTransitoDecorator(calculador);
         }
+        
+        return calculador.calcularSla(gravidade);
     }
 
     /**

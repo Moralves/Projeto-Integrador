@@ -39,12 +39,15 @@ public class AmbulanciaControlador {
         Bairro bairroBase = bairroRepositorio.findById(dto.getIdBairroBase())
                 .orElseThrow(() -> new IllegalArgumentException("Bairro não encontrado"));
 
-        Ambulancia ambulancia = new Ambulancia();
-        ambulancia.setPlaca(dto.getPlaca());
-        ambulancia.setTipo(dto.getTipo());
-        ambulancia.setBairroBase(bairroBase);
-        ambulancia.setStatus(StatusAmbulancia.DISPONIVEL);
-        ambulancia.setAtiva(true);
+        // Padrão Factory: Utilizando fábrica para instanciar as ambulâncias
+        com.vitalistech.sosrota.padroes.factory.AmbulanciaFactory factory;
+        if (dto.getTipo() == com.vitalistech.sosrota.dominio.modelo.TipoAmbulancia.UTI) {
+            factory = new com.vitalistech.sosrota.padroes.factory.AmbulanciaUTIFactory();
+        } else {
+            factory = new com.vitalistech.sosrota.padroes.factory.AmbulanciaBasicaFactory();
+        }
+        
+        Ambulancia ambulancia = factory.criarAmbulancia(dto.getPlaca(), bairroBase);
 
         return ResponseEntity.ok(ambulanciaRepositorio.save(ambulancia));
     }

@@ -22,15 +22,18 @@ public class AnaliseEstrategicaServico {
     private final OcorrenciaRepositorio ocorrenciaRepositorio;
     private final AmbulanciaRepositorio ambulanciaRepositorio;
     private final RuaConexaoRepositorio ruaConexaoRepositorio;
+    private final com.vitalistech.sosrota.padroes.adapter.CalculadorDistanciaPort calculadorDistanciaPort;
 
     public AnaliseEstrategicaServico(BairroRepositorio bairroRepositorio,
                                      OcorrenciaRepositorio ocorrenciaRepositorio,
                                      AmbulanciaRepositorio ambulanciaRepositorio,
-                                     RuaConexaoRepositorio ruaConexaoRepositorio) {
+                                     RuaConexaoRepositorio ruaConexaoRepositorio,
+                                     com.vitalistech.sosrota.padroes.adapter.CalculadorDistanciaPort calculadorDistanciaPort) {
         this.bairroRepositorio = bairroRepositorio;
         this.ocorrenciaRepositorio = ocorrenciaRepositorio;
         this.ambulanciaRepositorio = ambulanciaRepositorio;
         this.ruaConexaoRepositorio = ruaConexaoRepositorio;
+        this.calculadorDistanciaPort = calculadorDistanciaPort;
     }
 
     /**
@@ -202,7 +205,8 @@ public class AnaliseEstrategicaServico {
                 continue; // Pular se for o mesmo bairro
             }
 
-            ResultadoRota rota = AlgoritmoDijkstra.calcularRota(bairroBase, destino, todasConexoes);
+            // Padrão Adapter
+            ResultadoRota rota = calculadorDistanciaPort.calcularRota(bairroBase, destino, todasConexoes);
             
             if (!Double.isInfinite(rota.getDistanciaKm())) {
                 // Tempo em minutos = (distância em km / 60 km/h) * 60 minutos/hora
@@ -263,7 +267,8 @@ public class AnaliseEstrategicaServico {
             }
             
             // Calcular distância usando Dijkstra
-            ResultadoRota rota = AlgoritmoDijkstra.calcularRota(bairro, bairroAmbulancia, todasConexoes);
+            // Padrão Adapter
+            ResultadoRota rota = calculadorDistanciaPort.calcularRota(bairro, bairroAmbulancia, todasConexoes);
             
             if (!Double.isInfinite(rota.getDistanciaKm()) && rota.getDistanciaKm() < distanciaMinima) {
                 distanciaMinima = rota.getDistanciaKm();
