@@ -33,7 +33,7 @@
               </span>
             </td>
             <td><strong>{{ b.nome }}</strong></td>
-            <td style="font-size:0.875rem;color:#4b5563">{{ b.justificativa || 'Bairro estratégico para expansão' }}</td>
+            <td style="font-size:0.875rem;color:#4b5563">{{ getJustificativaPonto(b) }}</td>
             <td>
               <span *ngIf="b.bairrosAlcancaveis > 0" class="badge"
                 [style.backgroundColor]="getConexoesBadge(b.bairrosAlcancaveis).bg"
