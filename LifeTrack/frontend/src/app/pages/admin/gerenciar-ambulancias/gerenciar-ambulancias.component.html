@@ -1,35 +1,42 @@
 <div class="admin-page">
   <div class="page-header">
-    <h1 class="page-title">Gerenciamento de Ambulâncias</h1>
+    <h1 class="page-title">Ambulâncias</h1>
     <button class="btn btn-primary" (click)="openModal()">+ Nova Ambulância</button>
   </div>
 
-  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="pageError" class="alert alert-error">{{ pageError }}</div>
   <div *ngIf="loading" class="loading-box">Carregando ambulâncias...</div>
 
   <div *ngIf="!loading" class="table-card">
     <div class="table-wrapper">
       <table class="data-table">
         <thead><tr>
-          <th>ID</th><th>Placa</th><th>Tipo</th><th>Status</th><th>Bairro Base</th><th>Ativa</th><th>Ações</th>
+          <th>ID</th><th>Placa</th><th>Tipo</th><th>Base</th>
+          <th>Status Atual</th><th>Ativa</th><th>Ações</th>
         </tr></thead>
         <tbody>
-          <tr *ngIf="ambulancias.length === 0"><td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Nenhuma ambulância cadastrada</td></tr>
+          <tr *ngIf="ambulancias.length === 0"><td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Nenhuma ambulância encontrada</td></tr>
           <tr *ngFor="let amb of ambulancias">
             <td class="text-muted">{{ amb.id }}</td>
-            <td><strong>{{ amb.placa }}</strong></td>
-            <td><span class="badge badge-info">{{ amb.tipo }}</span></td>
-            <td><span class="badge badge-ativo">{{ amb.status }}</span></td>
-            <td>{{ amb.bairroBase?.nome || 'N/A' }}</td>
+            <td style="font-weight:600">{{ amb.placa }}</td>
+            <td><span class="badge" [class.badge-warning]="amb.tipo==='UTI'" [class.badge-info]="amb.tipo==='BASICA'">{{ amb.tipo }}</span></td>
+            <td>{{ amb.nomeBairroBase || '-' }}</td>
             <td>
-              <span class="badge" [class.badge-ativo]="amb.ativa" [class.badge-inativo]="!amb.ativa">
-                {{ amb.ativa ? 'Sim' : 'Não' }}
+              <span class="badge"
+                [class.badge-ativo]="amb.status === 'DISPONIVEL'"
+                [class.badge-warning]="amb.status === 'EM_ATENDIMENTO'"
+                [class.badge-inativo]="amb.status === 'EM_MANUTENCAO' || amb.status === 'INATIVA'">
+                {{ amb.status }}
               </span>
             </td>
+            <td><span class="badge" [class.badge-ativo]="amb.ativa" [class.badge-inativo]="!amb.ativa">{{ amb.ativa ? 'Sim' : 'Não' }}</span></td>
             <td>
-              <button class="btn btn-sm" [class.btn-danger]="amb.ativa" [class.btn-success]="!amb.ativa" (click)="toggleStatus(amb.id, amb.ativa)">
-                {{ amb.ativa ? 'Desativar' : 'Ativar' }}
-              </button>
+              <div class="actions-cell">
+                <button class="btn btn-sm" [class.btn-danger]="amb.ativa" [class.btn-success]="!amb.ativa"
+                  (click)="toggleStatus(amb.id, amb.ativa)">
+                  {{ amb.ativa ? 'Desativar' : 'Ativar' }}
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -47,11 +54,11 @@
     <form (ngSubmit)="handleSubmit()">
       <div class="form-group">
         <label class="form-label">Placa *</label>
-        <input class="form-input" type="text" [(ngModel)]="formData.placa" name="placa" placeholder="ABC-1234" required />
+        <input class="form-input" type="text" [(ngModel)]="formData.placa" name="placa" placeholder="ABC1234" required />
       </div>
       <div class="form-group">
         <label class="form-label">Tipo *</label>
-        <select class="form-select" [(ngModel)]="formData.tipo" name="tipo" (change)="onTipoChange(formData.tipo)" required>
+        <select class="form-select" [(ngModel)]="formData.tipo" name="tipo" (ngModelChange)="onTipoChange($event)" required>
           <option value="BASICA">Básica</option>
           <option value="UTI">UTI</option>
         </select>
@@ -90,7 +97,7 @@
         </app-autocomplete-select>
         <small class="form-helper">Bairro onde a ambulância está estacionada (ponto de partida)</small>
       </div>
-      <div *ngIf="error" class="form-error">{{ error }}</div>
+      <div *ngIf="modalError" class="form-error">{{ modalError }}</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">Criar</button>

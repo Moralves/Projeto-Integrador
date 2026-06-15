@@ -20,7 +20,8 @@ export class GerenciarEquipesComponent implements OnInit {
   ambulancias: any[] = [];
   profissionais: any[] = [];
   loading = true;
-  error = '';
+  pageError = '';
+  modalError = '';
   showModal = false;
   editingEquipe: any = null;
   formData: { idAmbulancia: string; descricao: string; idsProfissionais: string[] } = { idAmbulancia: '', descricao: '', idsProfissionais: [] };
@@ -69,15 +70,15 @@ export class GerenciarEquipesComponent implements OnInit {
           );
 
           this.equipesStatus = Object.fromEntries(statusEntries);
-          this.error = '';
+          this.pageError = '';
         } catch (e: any) {
-          this.error = 'Erro ao carregar dados: ' + (e?.message || e);
+          this.pageError = 'Erro ao carregar dados: ' + (e?.message || e);
         } finally {
           this.loading = false;
           renderChanges(this.cdr);
         }
       },
-      error: (e) => { this.error = 'Erro ao carregar dados: ' + (e.message || e); this.loading = false; renderChanges(this.cdr); }
+      error: (e) => { this.pageError = 'Erro ao carregar dados: ' + (e.message || e); this.loading = false; renderChanges(this.cdr); }
     });
   }
 
@@ -89,14 +90,14 @@ export class GerenciarEquipesComponent implements OnInit {
       idsProfissionais: equipe.profissionais?.map((ep: any) => ep.profissional?.id?.toString()).filter(Boolean) || []
     };
     this.carregarDados(true);
-    this.error = '';
+    this.modalError = '';
     this.showModal = true;
   }
 
   openNewModal() {
     this.editingEquipe = null;
     this.formData = { idAmbulancia: '', descricao: '', idsProfissionais: [] };
-    this.error = '';
+    this.modalError = '';
     this.showModal = true;
   }
 
@@ -126,7 +127,7 @@ export class GerenciarEquipesComponent implements OnInit {
   }
 
   handleSubmit() {
-    this.error = '';
+    this.modalError = '';
     const payload: any = {
       descricao: this.formData.descricao,
       idsProfissionais: this.formData.idsProfissionais.map(id => parseInt(id))
@@ -134,9 +135,11 @@ export class GerenciarEquipesComponent implements OnInit {
     const obs = this.editingEquipe
       ? this.equipeService.atualizarEquipe(this.editingEquipe.id, payload)
       : (payload.idAmbulancia = parseInt(this.formData.idAmbulancia), this.equipeService.criarEquipe(payload));
-    obs.subscribe({
+    obs.pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => { this.closeModal(); this.carregarDados(); },
-      error: (e) => { this.error = 'Erro: ' + (e.error?.message || e.message); }
+      error: (e) => { this.modalError = 'Erro: ' + (e.error?.message || e.message); }
     });
   }
 

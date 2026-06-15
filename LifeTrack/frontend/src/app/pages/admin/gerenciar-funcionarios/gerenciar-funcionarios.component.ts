@@ -15,7 +15,8 @@ import { renderChanges } from '../../../core/utils/render-changes';
 export class GerenciarFuncionariosComponent implements OnInit {
   profissionais: any[] = [];
   loading = true;
-  error = '';
+  pageError = '';
+  modalError = '';
   showModal = false;
   editingId: number | null = null;
   filtroTurno = '';
@@ -32,56 +33,64 @@ export class GerenciarFuncionariosComponent implements OnInit {
     this.profissionalService.listar(this.filtroTurno || null, this.filtroStatus || null).pipe(
       finalize(() => renderChanges(this.cdr))
     ).subscribe({
-      next: (d) => { this.profissionais = d; this.error = ''; this.loading = false; },
-      error: (e) => { this.error = 'Erro ao carregar: ' + (e.message || e); this.loading = false; }
+      next: (d) => { this.profissionais = d; this.pageError = ''; this.loading = false; },
+      error: (e) => { this.pageError = 'Erro ao carregar: ' + (e.message || e); this.loading = false; }
     });
   }
 
   handleEdit(id: number) {
-    this.profissionalService.buscarPorId(id).subscribe({
+    this.profissionalService.buscarPorId(id).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (prof: any) => {
-        if (prof.status === 'EM_ATENDIMENTO') { this.error = 'Não é possível editar funcionário em atendimento.'; return; }
+        if (prof.status === 'EM_ATENDIMENTO') { this.pageError = 'Não é possível editar funcionário em atendimento.'; return; }
         this.formData = { nome: prof.nome, funcao: prof.funcao, contato: prof.contato || '', turno: prof.turno || 'MANHA', status: prof.status || 'DISPONIVEL', ativo: prof.ativo ?? true };
         this.editingId = id;
-        this.error = '';
+        this.modalError = '';
         this.showModal = true;
       },
-      error: (e) => { this.error = 'Erro ao carregar: ' + (e.message || e); }
+      error: (e) => { this.pageError = 'Erro ao carregar: ' + (e.message || e); }
     });
   }
 
   openNew() {
     this.editingId = null;
     this.formData = { nome: '', funcao: 'MEDICO', contato: '', turno: 'MANHA', status: 'DISPONIVEL', ativo: true };
-    this.error = '';
+    this.modalError = '';
     this.showModal = true;
   }
 
   closeModal() { this.showModal = false; this.editingId = null; }
 
   handleSubmit() {
-    this.error = '';
+    this.modalError = '';
     const obs = this.editingId
       ? this.profissionalService.editar(this.editingId, this.formData as any)
       : this.profissionalService.cadastrar(this.formData as any);
-    obs.subscribe({
+    obs.pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => { this.closeModal(); this.carregarProfissionais(); },
-      error: (e) => { this.error = 'Erro ao salvar: ' + (e.error?.message || e.message); }
+      error: (e) => { this.modalError = 'Erro ao salvar: ' + (e.error?.message || e.message); }
     });
   }
 
   alterarStatus(id: number, novoStatus: string) {
-    this.profissionalService.alterarStatus(id, novoStatus).subscribe({
+    this.profissionalService.alterarStatus(id, novoStatus).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => this.carregarProfissionais(),
-      error: (e) => { this.error = 'Erro ao alterar status: ' + (e.error?.message || e.message); }
+      error: (e) => { this.pageError = 'Erro ao alterar status: ' + (e.error?.message || e.message); }
     });
   }
 
   desativar(id: number) {
     if (!window.confirm('Tem certeza que deseja desativar este profissional?')) return;
-    this.profissionalService.desativar(id).subscribe({
+    this.profissionalService.desativar(id).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => this.carregarProfissionais(),
-      error: (e) => { this.error = 'Erro ao desativar: ' + (e.error?.message || e.message); }
+      error: (e) => { this.pageError = 'Erro ao desativar: ' + (e.error?.message || e.message); }
     });
   }
 

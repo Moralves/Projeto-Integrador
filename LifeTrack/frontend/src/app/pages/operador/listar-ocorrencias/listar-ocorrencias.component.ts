@@ -96,7 +96,9 @@ export class ListarOcorrenciasComponent implements OnInit, OnDestroy {
     if (!window.confirm('Deseja realmente despachar esta ocorrência?')) return;
     this.despachando = id;
     this.error = '';
-    this.ocorrenciaService.despachar(id).subscribe({
+    this.ocorrenciaService.despachar(id).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => {
         alert('Ocorrência despachada com sucesso!');
         this.carregarOcorrencias(true);

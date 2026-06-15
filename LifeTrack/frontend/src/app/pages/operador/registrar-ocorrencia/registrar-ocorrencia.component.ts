@@ -80,9 +80,9 @@ export class RegistrarOcorrenciaComponent implements OnInit {
     this.error = '';
     this.success = '';
 
-    if (!this.formData.idBairroLocal) { this.error = 'Selecione um bairro'; return; }
-    if (!this.formData.tipoOcorrencia?.trim()) { this.error = 'Informe o tipo de ocorrência'; return; }
-    if (!this.formData.gravidade) { this.error = 'Selecione a gravidade'; return; }
+    if (!this.formData.idBairroLocal) { this.error = 'Selecione um bairro'; renderChanges(this.cdr); return; }
+    if (!this.formData.tipoOcorrencia?.trim()) { this.error = 'Informe o tipo de ocorrência'; renderChanges(this.cdr); return; }
+    if (!this.formData.gravidade) { this.error = 'Selecione a gravidade'; renderChanges(this.cdr); return; }
 
     this.loading = true;
 

@@ -4,7 +4,7 @@
     <button class="btn btn-primary" (click)="openNew()">+ Novo Funcionário</button>
   </div>
 
-  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="pageError" class="alert alert-error">{{ pageError }}</div>
 
   <div class="filters-bar">
     <label>Filtros:</label>
@@ -106,7 +106,7 @@
         <input type="checkbox" [(ngModel)]="formData.ativo" name="ativo" id="ativo" />
         <label for="ativo" style="margin:0;font-weight:600;color:#374151">Ativo</label>
       </div>
-      <div *ngIf="error" class="form-error">{{ error }}</div>
+      <div *ngIf="modalError" class="form-error">{{ modalError }}</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">{{ editingId ? 'Salvar' : 'Criar' }}</button>

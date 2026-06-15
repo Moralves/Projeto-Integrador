@@ -340,133 +340,46 @@ public class AnaliseEstrategicaServico {
 
     /**
      * Gera uma justificativa textual baseada nos dados do bairro, incluindo análise do Dijkstra.
-     * Explica os critérios de priorização: mais conexões diretas, mais ocorrências, menor tempo médio, menos ambulâncias.
+     * Focado em informações diretas: critérios e estratégia.
      */
     private String gerarJustificativa(int ocorrenciasNoBairro, double tempoMedioResposta, int ambulanciasExistentes,
                                      int ambulanciasMesmoTipo, double distanciaMinimaProxima, int conexoesDiretas, 
                                      int totalBairros, TipoAmbulancia tipoAmbulancia) {
-        List<String> razoes = new ArrayList<>();
-        List<String> criteriosPriorizacao = new ArrayList<>();
-
-        // Análise de conexões diretas
-        if (conexoesDiretas > 0) {
-            if (conexoesDiretas >= 5) {
-                razoes.add("excelente conectividade: " + conexoesDiretas + " conexão(ões) direta(s) com outros bairros");
-                criteriosPriorizacao.add("alta conectividade na rede viária");
-            } else if (conexoesDiretas >= 3) {
-                razoes.add("boa conectividade: " + conexoesDiretas + " conexão(ões) direta(s)");
-                criteriosPriorizacao.add("boa conectividade");
-            } else {
-                razoes.add(conexoesDiretas + " conexão(ões) direta(s) com outros bairros");
-                // Bairros com poucas conexões podem ser pontos críticos (gargalos) na rede
-                if (conexoesDiretas <= 2) {
-                    criteriosPriorizacao.add("ponto crítico na rede - poucas conexões podem ser gargalo estratégico");
-                    razoes.add("⚠️ ATENÇÃO: Bairro com poucas conexões - pode ser ponto crítico na rede viária");
-                }
-            }
-        } else {
-            razoes.add("sem conexões diretas cadastradas");
-            criteriosPriorizacao.add("isolado - sem conexões cadastradas");
-        }
-
-        // Análise de ocorrências
-        if (ocorrenciasNoBairro > 0) {
-            razoes.add(ocorrenciasNoBairro + " ocorrência(s) registrada(s) no bairro");
-            if (ocorrenciasNoBairro >= 5) {
-                criteriosPriorizacao.add("alto volume de ocorrências");
-            } else if (ocorrenciasNoBairro >= 2) {
-                criteriosPriorizacao.add("médio volume de ocorrências");
-            } else {
-                criteriosPriorizacao.add("baixo volume de ocorrências");
-            }
-        } else {
-            criteriosPriorizacao.add("sem ocorrências registradas");
-        }
-
-        // Análise de tempo médio de resposta
-        if (tempoMedioResposta > 0) {
-            if (tempoMedioResposta < 15) {
-                razoes.add("excelente tempo médio de resposta calculado pelo Dijkstra: " + 
-                          String.format("%.1f", tempoMedioResposta) + " min");
-                criteriosPriorizacao.add("tempo de resposta excelente");
-            } else if (tempoMedioResposta < 20) {
-                razoes.add("bom tempo médio de resposta via Dijkstra: " + 
-                          String.format("%.1f", tempoMedioResposta) + " min");
-                criteriosPriorizacao.add("tempo de resposta bom");
-            } else {
-                razoes.add("tempo médio de resposta: " + String.format("%.1f", tempoMedioResposta) + 
-                          " min (calculado pelo algoritmo Dijkstra)");
-                criteriosPriorizacao.add("tempo de resposta pode ser melhorado");
-            }
-        } else {
-            criteriosPriorizacao.add("sem dados de tempo de resposta (sem ocorrências)");
-        }
-
-        // Análise de ambulâncias existentes
+        List<String> criterios = new ArrayList<>();
+        
         if (ambulanciasExistentes == 0) {
-            razoes.add("sem ambulâncias no momento - posicionamento estratégico recomendado");
-            criteriosPriorizacao.add("sem cobertura atual - alta prioridade");
-        } else if (ambulanciasExistentes == 1) {
-            razoes.add("apenas 1 ambulância existente - pode necessitar reforço");
-            criteriosPriorizacao.add("cobertura limitada");
+            criterios.add("Sem cobertura");
         } else {
-            razoes.add(ambulanciasExistentes + " ambulância(s) já posicionadas");
-            criteriosPriorizacao.add("já possui cobertura");
-        }
-
-        // Análise de distância para outras ambulâncias (evitar aglomeração)
-        if (distanciaMinimaProxima < Double.POSITIVE_INFINITY) {
-            if (distanciaMinimaProxima == 0.0) {
-                razoes.add("⚠️ ATENÇÃO: Já existe ambulância neste bairro - risco de aglomeração");
-                criteriosPriorizacao.add("aglomeração detectada - baixa prioridade");
-            } else if (distanciaMinimaProxima < 2.0) {
-                razoes.add("⚠️ ATENÇÃO: Ambulância muito próxima (" + String.format("%.1f", distanciaMinimaProxima) + " km) - risco de aglomeração");
-                criteriosPriorizacao.add("muito próximo de outras ambulâncias");
-            } else if (distanciaMinimaProxima > 5.0) {
-                razoes.add("✅ Boa distribuição: " + String.format("%.1f", distanciaMinimaProxima) + " km da ambulância mais próxima");
-                criteriosPriorizacao.add("boa distribuição geográfica");
+            if (tipoAmbulancia != null && ambulanciasMesmoTipo > 0) {
+                criterios.add("Aglomeração do tipo " + tipoAmbulancia.name());
             } else {
-                razoes.add("Distância para ambulância mais próxima: " + String.format("%.1f", distanciaMinimaProxima) + " km");
-                criteriosPriorizacao.add("distribuição adequada");
-            }
-        } else {
-            razoes.add("✅ Sem ambulâncias próximas - ideal para distribuição geográfica");
-            criteriosPriorizacao.add("sem ambulâncias próximas - excelente para distribuição");
-        }
-
-        // Análise específica por tipo de ambulância
-        if (tipoAmbulancia != null) {
-            if (ambulanciasMesmoTipo > 0) {
-                razoes.add("⚠️ Já existem " + ambulanciasMesmoTipo + " ambulância(s) " + tipoAmbulancia.name() + " neste bairro");
-                criteriosPriorizacao.add("aglomeração do mesmo tipo detectada");
-            } else {
-                razoes.add("✅ Sem ambulâncias " + tipoAmbulancia.name() + " neste bairro - posicionamento ideal");
-                criteriosPriorizacao.add("sem ambulâncias do tipo " + tipoAmbulancia.name());
+                criterios.add("Já possui cobertura");
             }
         }
-
-        // Construir justificativa completa com critérios de priorização
-        String justificativaBase = String.join("; ", razoes);
         
-        // Adicionar explicação dos critérios de priorização
-        String tipoInfo = tipoAmbulancia != null ? " (Tipo: " + tipoAmbulancia.name() + ")" : "";
-        String explicacaoPriorizacao = "📊 Critérios de priorização" + tipoInfo + ": " + String.join(", ", criteriosPriorizacao) + 
-                                      ". Ordenação: (1) score de prioridade (ocorrências, distribuição, cobertura), (2) mais conexões diretas, (3) mais ocorrências relevantes.";
-        
-        // Adicionar nota estratégica sobre bairros com poucas conexões
-        String notaEstrategica = "";
-        if (conexoesDiretas <= 2 && conexoesDiretas > 0) {
-            notaEstrategica = " 💡 ESTRATÉGICO: Bairros com poucas conexões são pontos críticos na rede - uma ambulância aqui pode cobrir múltiplas rotas e evitar isolamento de outras áreas.";
-        } else if (conexoesDiretas >= 5) {
-            notaEstrategica = " 💡 ESTRATÉGICO: Alta conectividade permite acesso rápido a múltiplos bairros, ideal para posicionamento central.";
+        if (distanciaMinimaProxima < 2.0) {
+            criterios.add("Risco de aglomeração");
+        } else if (distanciaMinimaProxima > 5.0 && distanciaMinimaProxima != Double.POSITIVE_INFINITY) {
+            criterios.add("Boa distribuição");
+        } else if (distanciaMinimaProxima == Double.POSITIVE_INFINITY) {
+            criterios.add("Distribuição ideal");
         }
         
-        if (razoes.isEmpty()) {
-            return "Bairro estratégico para expansão da cobertura - análise baseada em Dijkstra mostra potencial de melhoria. " + 
-                   explicacaoPriorizacao + notaEstrategica;
+        if (tempoMedioResposta > 0 && tempoMedioResposta < 15) {
+            criterios.add("Tempo resposta rápido");
         }
 
-        return "Análise Dijkstra: " + justificativaBase + ". " + explicacaoPriorizacao + notaEstrategica;
+        String txtEstrategia = "Expansão de malha e melhoria de atendimento regional";
+        if (conexoesDiretas >= 5) {
+            txtEstrategia = "Alta conectividade. Posicionamento central para acesso rápido a múltiplos bairros";
+        } else if (conexoesDiretas <= 2 && conexoesDiretas > 0) {
+            txtEstrategia = "Ponto crítico na rede. Evita gargalos e isolamento da área";
+        } else if (ambulanciasExistentes == 0) {
+            txtEstrategia = "Preenchimento de lacuna de cobertura e distribuição eficiente";
+        }
+
+        String txtCriterios = criterios.isEmpty() ? "Melhoria de rede" : String.join(" • ", criterios);
+        return String.format("📊 Critérios: %s | 💡 Estratégia: %s", txtCriterios, txtEstrategia);
     }
 }
 

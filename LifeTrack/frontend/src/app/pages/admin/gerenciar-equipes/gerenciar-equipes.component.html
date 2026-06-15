@@ -4,7 +4,7 @@
     <button class="btn btn-primary" (click)="openNewModal()">+ Nova Equipe</button>
   </div>
 
-  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="pageError" class="alert alert-error">{{ pageError }}</div>
   <div *ngIf="loading" class="loading-box">Carregando equipes...</div>
 
   <div *ngIf="!loading" class="table-card">
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <div *ngIf="error" class="form-error">{{ error }}</div>
+      <div *ngIf="modalError" class="form-error">{{ modalError }}</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">{{ editingEquipe ? 'Salvar Alterações' : 'Criar' }}</button>

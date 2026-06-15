@@ -21,7 +21,8 @@ export class GerenciarAmbulanciasComponent implements OnInit {
   bairrosSugeridos: any[] = [];
   loading = true;
   loadingSugestoes = false;
-  error = '';
+  pageError = '';
+  modalError = '';
   showModal = false;
   formData = { placa: '', tipo: 'BASICA', idBairroBase: '' as any };
 
@@ -45,13 +46,14 @@ export class GerenciarAmbulanciasComponent implements OnInit {
         this.bairros = bairros;
         this.loading = false;
       },
-      error: (e) => { this.error = 'Erro ao carregar dados: ' + (e.message || e); this.loading = false; }
+      error: (e) => { this.pageError = 'Erro ao carregar dados: ' + (e.message || e); this.loading = false; }
     });
   }
 
   openModal() {
     this.formData = { placa: '', tipo: 'BASICA', idBairroBase: '' };
     this.bairrosSugeridos = [];
+    this.modalError = '';
     this.showModal = true;
     this.carregarSugestoes('BASICA');
   }
@@ -79,20 +81,24 @@ export class GerenciarAmbulanciasComponent implements OnInit {
   }
 
   handleSubmit() {
-    this.error = '';
-    if (!this.formData.idBairroBase) { this.error = 'Selecione um bairro base'; return; }
+    this.modalError = '';
+    if (!this.formData.idBairroBase) { this.modalError = 'Selecione um bairro base'; renderChanges(this.cdr); return; }
     const payload = { placa: this.formData.placa.trim(), tipo: this.formData.tipo, idBairroBase: parseInt(this.formData.idBairroBase) };
-    this.ambulanciaService.cadastrar(payload).subscribe({
+    this.ambulanciaService.cadastrar(payload).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => { this.closeModal(); this.recarregarAmbulancias(); },
-      error: (e) => { this.error = 'Erro ao salvar: ' + (e.error?.message || e.message); }
+      error: (e) => { this.modalError = 'Erro ao salvar: ' + (e.error?.message || e.message); }
     });
   }
 
   toggleStatus(id: number, ativa: boolean) {
     const obs = ativa ? this.ambulanciaService.desativar(id) : this.ambulanciaService.ativar(id);
-    obs.subscribe({
+    obs.pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => this.recarregarAmbulancias(),
-      error: (e) => { this.error = 'Erro ao alterar status: ' + (e.error?.message || e.message); }
+      error: (e) => { this.pageError = 'Erro ao alterar status: ' + (e.error?.message || e.message); }
     });
   }
 
