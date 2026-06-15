@@ -1,6 +1,8 @@
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { finalize } from 'rxjs';
 import { HistoricoService } from '../../../core/services/historico.service';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-historico-ocorrencia',
@@ -20,6 +22,7 @@ export class HistoricoOcorrenciaComponent implements OnInit, OnDestroy, OnChange
 
   private historicoService = inject(HistoricoService);
   private datePipe = inject(DatePipe);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() {
     this.iniciarBusca();
@@ -44,7 +47,9 @@ export class HistoricoOcorrenciaComponent implements OnInit, OnDestroy, OnChange
   }
 
   private carregarHistorico() {
-    this.historicoService.buscarPorOcorrencia(this.ocorrenciaId).subscribe({
+    this.historicoService.buscarPorOcorrencia(this.ocorrenciaId).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (dados) => {
         this.historicos = dados;
         this.error = null;

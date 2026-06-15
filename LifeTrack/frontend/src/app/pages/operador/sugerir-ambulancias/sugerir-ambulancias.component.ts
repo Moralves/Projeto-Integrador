@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { OcorrenciaService } from '../../../core/services/ocorrencia.service';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-sugerir-ambulancias',
@@ -20,6 +22,7 @@ export class SugerirAmbulanciasComponent implements OnInit, OnChanges {
   despachando = false;
 
   private ocorrenciaService = inject(OcorrenciaService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() {
     this.carregarSugestoes();
@@ -41,7 +44,9 @@ export class SugerirAmbulanciasComponent implements OnInit, OnChanges {
 
     this.loading = true;
     this.error = '';
-    this.ocorrenciaService.sugerirAmbulancias(this.ocorrenciaId).subscribe({
+    this.ocorrenciaService.sugerirAmbulancias(this.ocorrenciaId).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (dados) => {
         this.sugestoes = dados;
         this.loading = false;

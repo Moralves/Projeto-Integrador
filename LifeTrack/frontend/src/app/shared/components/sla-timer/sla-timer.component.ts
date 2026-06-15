@@ -1,6 +1,8 @@
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { OcorrenciaService } from '../../../core/services/ocorrencia.service';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-sla-timer',
@@ -20,6 +22,7 @@ export class SlaTimerComponent implements OnInit, OnDestroy, OnChanges {
   etapas: any = { ateDespacho: 0, ateChegada: 0, retorno: 0, total: 0 };
 
   private ocorrenciaService = inject(OcorrenciaService);
+  private cdr = inject(ChangeDetectorRef);
 
   // Status que devem mostrar o timer
   private readonly statusComTimer = ['ABERTA', 'DESPACHADA', 'EM_ATENDIMENTO', 'CONCLUIDA'];
@@ -47,7 +50,9 @@ export class SlaTimerComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private carregarTimer() {
-    this.ocorrenciaService.obterTimer(this.ocorrenciaId).subscribe({
+    this.ocorrenciaService.obterTimer(this.ocorrenciaId).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (dados) => {
         this.timer = dados;
         this.error = null;

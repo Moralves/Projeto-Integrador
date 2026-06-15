@@ -1,6 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { finalize } from 'rxjs';
 import { RelatorioService } from '../../../core/services/relatorio.service';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-relatorios',
@@ -17,12 +19,15 @@ export class RelatoriosComponent implements OnInit {
 
   private relatorioService = inject(RelatorioService);
   private datePipe = inject(DatePipe);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() { this.carregarRelatorio(); }
 
   carregarRelatorio() {
     this.loading = true;
-    this.relatorioService.relatorioOcorrencias().subscribe({
+    this.relatorioService.relatorioOcorrencias().pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (d) => { this.dados = d; this.error = ''; this.loading = false; },
       error: (e) => { this.error = 'Erro ao carregar relatório: ' + (e.message || e); this.loading = false; }
     });

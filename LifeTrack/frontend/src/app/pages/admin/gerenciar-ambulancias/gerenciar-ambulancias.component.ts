@@ -1,11 +1,12 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { AmbulanciaService } from '../../../core/services/ambulancia.service';
 import { BairroService } from '../../../core/services/bairro.service';
 import { AnaliseEstrategicaService } from '../../../core/services/analise-estrategica.service';
 import { AutocompleteSelectComponent } from '../../../shared/components/autocomplete-select/autocomplete-select.component';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-gerenciar-ambulancias',
@@ -27,6 +28,7 @@ export class GerenciarAmbulanciasComponent implements OnInit {
   private ambulanciaService = inject(AmbulanciaService);
   private bairroService = inject(BairroService);
   private analiseService = inject(AnaliseEstrategicaService);
+  private cdr = inject(ChangeDetectorRef);
 
   getOptionLabelBairro = (opt: any) => opt?.nome ?? opt;
   getOptionValueBairro = (opt: any) => opt?.id?.toString() ?? opt;
@@ -35,7 +37,9 @@ export class GerenciarAmbulanciasComponent implements OnInit {
     forkJoin({
       ambulancias: this.ambulanciaService.listar(),
       bairros: this.bairroService.listar()
-    }).subscribe({
+    }).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: ({ ambulancias, bairros }) => {
         this.ambulancias = ambulancias;
         this.bairros = bairros;
@@ -62,7 +66,9 @@ export class GerenciarAmbulanciasComponent implements OnInit {
 
   private carregarSugestoes(tipo: string) {
     this.loadingSugestoes = true;
-    this.analiseService.obterBairrosSugeridos(tipo).subscribe({
+    this.analiseService.obterBairrosSugeridos(tipo).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (sugestoes) => { this.bairrosSugeridos = sugestoes.slice(0, 5); this.loadingSugestoes = false; },
       error: () => { this.bairrosSugeridos = []; this.loadingSugestoes = false; }
     });
@@ -91,6 +97,8 @@ export class GerenciarAmbulanciasComponent implements OnInit {
   }
 
   private recarregarAmbulancias() {
-    this.ambulanciaService.listar().subscribe(d => this.ambulancias = d);
+    this.ambulanciaService.listar().pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe(d => this.ambulancias = d);
   }
 }

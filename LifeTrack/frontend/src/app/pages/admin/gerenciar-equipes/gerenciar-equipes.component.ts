@@ -1,10 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { EquipeService } from '../../../core/services/equipe.service';
 import { AmbulanciaService } from '../../../core/services/ambulancia.service';
 import { ProfissionalService } from '../../../core/services/profissional.service';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-gerenciar-equipes',
@@ -27,6 +28,7 @@ export class GerenciarEquipesComponent implements OnInit {
   private equipeService = inject(EquipeService);
   private ambulanciaService = inject(AmbulanciaService);
   private profissionalService = inject(ProfissionalService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() { this.carregarDados(); }
 
@@ -72,9 +74,10 @@ export class GerenciarEquipesComponent implements OnInit {
           this.error = 'Erro ao carregar dados: ' + (e?.message || e);
         } finally {
           this.loading = false;
+          renderChanges(this.cdr);
         }
       },
-      error: (e) => { this.error = 'Erro ao carregar dados: ' + (e.message || e); this.loading = false; }
+      error: (e) => { this.error = 'Erro ao carregar dados: ' + (e.message || e); this.loading = false; renderChanges(this.cdr); }
     });
   }
 

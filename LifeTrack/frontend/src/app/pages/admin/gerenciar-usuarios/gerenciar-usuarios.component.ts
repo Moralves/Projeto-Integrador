@@ -1,7 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { UsuarioService } from '../../../core/services/usuario.service';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-gerenciar-usuarios',
@@ -20,12 +22,15 @@ export class GerenciarUsuariosComponent implements OnInit {
   formData = { username: '', password: '', nome: '', email: '', telefone: '' };
 
   private usuarioService = inject(UsuarioService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() { this.carregarUsuarios(); }
 
   carregarUsuarios() {
     this.loading = true;
-    this.usuarioService.listar().subscribe({
+    this.usuarioService.listar().pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (d) => { this.usuarios = d; this.error = ''; this.loading = false; },
       error: (e) => { this.error = 'Erro ao carregar usuários: ' + (e.message || e); this.loading = false; }
     });

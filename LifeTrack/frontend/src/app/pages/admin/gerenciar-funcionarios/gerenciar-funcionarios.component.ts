@@ -1,7 +1,9 @@
-import { Component, OnInit, OnChanges, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { ProfissionalService } from '../../../core/services/profissional.service';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-gerenciar-funcionarios',
@@ -21,12 +23,15 @@ export class GerenciarFuncionariosComponent implements OnInit {
   formData = { nome: '', funcao: 'MEDICO', contato: '', turno: 'MANHA', status: 'DISPONIVEL', ativo: true };
 
   private profissionalService = inject(ProfissionalService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() { this.carregarProfissionais(); }
 
   carregarProfissionais() {
     this.loading = true;
-    this.profissionalService.listar(this.filtroTurno || null, this.filtroStatus || null).subscribe({
+    this.profissionalService.listar(this.filtroTurno || null, this.filtroStatus || null).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (d) => { this.profissionais = d; this.error = ''; this.loading = false; },
       error: (e) => { this.error = 'Erro ao carregar: ' + (e.message || e); this.loading = false; }
     });

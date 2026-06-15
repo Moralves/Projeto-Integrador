@@ -1,6 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { AnaliseEstrategicaService } from '../../../core/services/analise-estrategica.service';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-analise-estrategica',
@@ -15,12 +17,15 @@ export class AnaliseEstrategicaComponent implements OnInit {
   error = '';
 
   private analiseService = inject(AnaliseEstrategicaService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() { this.carregarAnalise(); }
 
   carregarAnalise() {
     this.loading = true;
-    this.analiseService.obterBairrosSugeridos(null).subscribe({
+    this.analiseService.obterBairrosSugeridos(null).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (d) => { this.bairrosSugeridos = d; this.error = ''; this.loading = false; },
       error: (e) => { this.error = 'Erro ao carregar análise: ' + (e.message || e); this.loading = false; }
     });

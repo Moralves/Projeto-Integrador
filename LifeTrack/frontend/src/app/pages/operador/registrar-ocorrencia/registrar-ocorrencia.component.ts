@@ -1,10 +1,12 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { OcorrenciaService } from '../../../core/services/ocorrencia.service';
 import { BairroService } from '../../../core/services/bairro.service';
 import { AutocompleteSelectComponent } from '../../../shared/components/autocomplete-select/autocomplete-select.component';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 const TIPOS_OCORRENCIA = [
   'Acidente de Trânsito', 'Atendimento Médico', 'Resgate', 'Incêndio',
@@ -44,6 +46,7 @@ export class RegistrarOcorrenciaComponent implements OnInit {
   private ocorrenciaService = inject(OcorrenciaService);
   private bairroService = inject(BairroService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   getOptionLabelBairro = (opt: any) => opt?.nome ?? opt;
   getOptionValueBairro = (opt: any) => opt?.id?.toString() ?? opt;
@@ -59,7 +62,9 @@ export class RegistrarOcorrenciaComponent implements OnInit {
   }
 
   private carregarBairros() {
-    this.bairroService.listar().subscribe({
+    this.bairroService.listar().pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (dados) => (this.bairros = dados),
       error: (err) => (this.error = 'Erro ao carregar bairros: ' + (err.message || err))
     });
@@ -88,7 +93,9 @@ export class RegistrarOcorrenciaComponent implements OnInit {
       observacoes: this.formData.observacoes?.trim() || null
     };
 
-    this.ocorrenciaService.registrar(payload as any).subscribe({
+    this.ocorrenciaService.registrar(payload as any).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => {
         this.success = 'Ocorrência registrada com sucesso!';
         this.limpar();

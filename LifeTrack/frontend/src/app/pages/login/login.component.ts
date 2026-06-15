@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { renderChanges } from '../../core/utils/render-changes';
 
 @Component({
   selector: 'app-login',
@@ -20,6 +21,7 @@ export class LoginComponent {
 
   private authService = inject(AuthService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   handleSubmit() {
     this.error = '';
@@ -28,6 +30,7 @@ export class LoginComponent {
     this.authService.login({ login: this.login, senha: this.senha }).pipe(
       finalize(() => {
         this.loading = false;
+        renderChanges(this.cdr);
       })
     ).subscribe({
       next: (res) => {

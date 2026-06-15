@@ -1,11 +1,12 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription, interval } from 'rxjs';
+import { Subscription, finalize, interval } from 'rxjs';
 import { OcorrenciaService } from '../../../core/services/ocorrencia.service';
 import { SlaTimerComponent } from '../../../shared/components/sla-timer/sla-timer.component';
 import { HistoricoOcorrenciaComponent } from '../../../shared/components/historico-ocorrencia/historico-ocorrencia.component';
 import { SugerirAmbulanciasComponent } from '../sugerir-ambulancias/sugerir-ambulancias.component';
+import { renderChanges } from '../../../core/utils/render-changes';
 
 @Component({
   selector: 'app-listar-ocorrencias',
@@ -34,6 +35,7 @@ export class ListarOcorrenciasComponent implements OnInit, OnDestroy {
 
   private ocorrenciaService = inject(OcorrenciaService);
   private datePipe = inject(DatePipe);
+  private cdr = inject(ChangeDetectorRef);
   private refreshSubscription?: Subscription;
   private carregamentoEmAndamento = false;
 
@@ -60,7 +62,9 @@ export class ListarOcorrenciasComponent implements OnInit, OnDestroy {
       this.refreshing = true;
     }
 
-    this.ocorrenciaService.listar().subscribe({
+    this.ocorrenciaService.listar().pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: (dados) => {
         this.ocorrencias = dados;
         this.error = '';
