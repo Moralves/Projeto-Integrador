@@ -15,7 +15,8 @@ import { renderChanges } from '../../../core/utils/render-changes';
 export class GerenciarUsuariosComponent implements OnInit {
   usuarios: any[] = [];
   loading = true;
-  error = '';
+  pageError = '';
+  modalError = '';
   showModal = false;
   editingUsuario: any = null;
 
@@ -31,8 +32,8 @@ export class GerenciarUsuariosComponent implements OnInit {
     this.usuarioService.listar().pipe(
       finalize(() => renderChanges(this.cdr))
     ).subscribe({
-      next: (d) => { this.usuarios = d; this.error = ''; this.loading = false; },
-      error: (e) => { this.error = 'Erro ao carregar usuários: ' + (e.message || e); this.loading = false; }
+      next: (d) => { this.usuarios = d; this.pageError = ''; this.loading = false; },
+      error: (e) => { this.pageError = 'Erro ao carregar usuários: ' + (e.message || e); this.loading = false; }
     });
   }
 
@@ -41,43 +42,67 @@ export class GerenciarUsuariosComponent implements OnInit {
     this.formData = usuario
       ? { username: usuario.username, password: '', nome: usuario.nome, email: usuario.email, telefone: usuario.telefone || '' }
       : { username: '', password: '', nome: '', email: '', telefone: '' };
-    this.error = '';
+    this.modalError = '';
     this.showModal = true;
   }
 
   closeModal() { this.showModal = false; this.editingUsuario = null; }
 
   handleSubmit() {
-    this.error = '';
+    this.modalError = '';
     if (!this.editingUsuario && !this.formData.password) {
-      this.error = 'Senha é obrigatória para novos usuários';
+      this.modalError = 'Senha é obrigatória para novos usuários';
+      renderChanges(this.cdr);
       return;
     }
+
+    const dados = { ...this.formData };
+    
+    // Formatar telefone para o padrão esperado pelo backend: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+    if (dados.telefone) {
+      const nums = dados.telefone.replace(/\D/g, '');
+      if (nums.length === 11) {
+        dados.telefone = `(${nums.substring(0, 2)}) ${nums.substring(2, 7)}-${nums.substring(7)}`;
+      } else if (nums.length === 10) {
+        dados.telefone = `(${nums.substring(0, 2)}) ${nums.substring(2, 6)}-${nums.substring(6)}`;
+      } else {
+        this.modalError = 'O telefone deve ter 10 ou 11 dígitos (incluindo DDD)';
+        renderChanges(this.cdr);
+        return;
+      }
+    }
+
     const obs = this.editingUsuario
-      ? this.usuarioService.atualizarUsuario(this.editingUsuario.id, this.formData)
-      : this.usuarioService.criarUsuario(this.formData);
-    obs.subscribe({
+      ? this.usuarioService.atualizarUsuario(this.editingUsuario.id, dados)
+      : this.usuarioService.criarUsuario(dados);
+    obs.pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => { this.closeModal(); this.carregarUsuarios(); },
-      error: (e) => { this.error = 'Erro ao salvar: ' + (e.error?.message || e.message); }
+      error: (e) => { this.modalError = 'Erro ao salvar: ' + (e.error?.message || e.message); }
     });
   }
 
   handleDelete(id: number) {
     if (!window.confirm('Tem certeza que deseja deletar este usuário?')) return;
-    this.usuarioService.deletarUsuario(id).subscribe({
+    this.usuarioService.deletarUsuario(id).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => this.carregarUsuarios(),
-      error: (e) => { this.error = 'Erro ao deletar: ' + (e.error?.message || e.message); }
+      error: (e) => { this.pageError = 'Erro ao deletar: ' + (e.error?.message || e.message); }
     });
   }
 
   handleToggleStatus(id: number) {
-    this.usuarioService.toggleStatusUsuario(id).subscribe({
+    this.usuarioService.toggleStatusUsuario(id).pipe(
+      finalize(() => renderChanges(this.cdr))
+    ).subscribe({
       next: () => this.carregarUsuarios(),
-      error: (e) => { this.error = 'Erro ao alterar status: ' + (e.error?.message || e.message); }
+      error: (e) => { this.pageError = 'Erro ao alterar status: ' + (e.error?.message || e.message); }
     });
   }
 
   rolesText(usuario: any): string {
-    return usuario.roles?.length > 0 ? Array.from(usuario.roles as string[]).join(', ') : 'USER';
+    return usuario.roles?.length > 0 ? Array.from(usuario.roles as string[]).join(', ') : 'OPERADOR';
   }
 }

@@ -39,7 +39,7 @@ public class UsuarioControlador {
     public ResponseEntity<UsuarioDTO> criar(@RequestBody @Valid CriarUsuarioDTO dto) {
         // Verificar se o login já existe
         if (usuarioRepositorio.findByLogin(dto.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Login já existe");
         }
 
         Usuario usuario = new Usuario();
@@ -52,8 +52,8 @@ public class UsuarioControlador {
             throw new IllegalArgumentException("Senha é obrigatória");
         }
 
-        // Admin só pode criar usuários comuns (USER), nunca ADMIN
-        usuario.setPerfil("USER");
+        // Admin só pode criar usuários comuns (OPERADOR), nunca ADMIN
+        usuario.setPerfil("OPERADOR");
         
         // Definir nome, email e telefone
         usuario.setNome(dto.getNome() != null && !dto.getNome().isEmpty() ? dto.getNome() : dto.getUsername());
