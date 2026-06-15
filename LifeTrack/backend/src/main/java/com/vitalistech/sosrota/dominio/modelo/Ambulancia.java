@@ -1,6 +1,7 @@
 package com.vitalistech.sosrota.dominio.modelo;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * Representa uma ambulância cadastrada no sistema.
@@ -13,6 +14,7 @@ public class Ambulancia {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Placa é obrigatória")
     @Column(nullable = false, unique = true)
     private String placa;
 

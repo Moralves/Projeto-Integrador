@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom, forkJoin } from 'rxjs';
+import { firstValueFrom, forkJoin, finalize } from 'rxjs';
 import { EquipeService } from '../../../core/services/equipe.service';
 import { AmbulanciaService } from '../../../core/services/ambulancia.service';
 import { ProfissionalService } from '../../../core/services/profissional.service';
